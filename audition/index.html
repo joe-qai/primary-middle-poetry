@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>朗读音色试听 · 墨韵</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --ink: #20201d; --ink-2: #46443e; --ink-3: #6f6b62; --ink-4: #9a958a;
+    --paper: #faf6ec; --accent: #9c3d2e; --line: rgba(60,50,35,0.14);
+    --serif: 'Noto Serif SC','Source Han Serif SC','Songti SC','STSong','SimSun',serif;
+    --sans: 'Noto Sans SC','PingFang SC','Microsoft YaHei','Heiti SC',sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+    padding: 1.2rem 1rem 3rem; max-width: 640px; margin-inline: auto;
+  }
+  h1 { font-family: var(--serif); font-size: 1.25rem; margin: 0 0 0.3rem; letter-spacing: 0.04em; }
+  .lead { font-size: 0.82rem; color: var(--ink-3); line-height: 1.7; margin: 0 0 1.4rem; }
+  h2 { font-family: var(--serif); font-size: 1rem; margin: 1.8rem 0 0.7rem; color: var(--ink); }
+  h2 span { font-family: var(--sans); font-size: 0.72rem; color: var(--ink-4); font-weight: 400; margin-left: 0.4rem; }
+  .opt {
+    display: flex; align-items: center; gap: 0.85rem;
+    background: #fffdf8; border: 1px solid var(--line); border-radius: 14px;
+    padding: 0.85rem 0.95rem; margin-bottom: 0.6rem; cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .opt:active { transform: scale(0.995); }
+  .opt.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(156,61,46,0.1); }
+  .num {
+    flex: none; width: 1.95rem; height: 1.95rem; border-radius: 50%;
+    display: grid; place-items: center; font-size: 0.78rem; font-weight: 600;
+    background: #f0e9da; color: var(--ink-2);
+  }
+  .opt.on .num { background: var(--accent); color: #fff; }
+  .txt { flex: 1; min-width: 0; }
+  .name { font-family: var(--serif); font-size: 0.95rem; margin-bottom: 0.15rem; }
+  .desc { font-size: 0.72rem; color: var(--ink-4); line-height: 1.5; }
+  .state { font-size: 0.7rem; color: var(--accent); white-space: nowrap; }
+  .tip {
+    margin-top: 1.6rem; padding: 0.85rem 0.95rem; border-radius: 12px;
+    background: #f3ecdd; font-size: 0.76rem; color: var(--ink-2); line-height: 1.75;
+  }
+  .tip b { color: var(--accent); }
+</style>
+</head>
+<body>
+<h1>朗读音色试听</h1>
+<p class="lead">下面是同一段内容的不同处理方式。逐条点开听，重点听<b>「风」这个字有没有破音/沙哑</b>，再对比整体吐字是否清楚。<br>直接在微信里打开也能播。</p>
+
+<h2>《风》 唐 · 李峤 <span>重点听标题那个「风」</span></h2>
+<div id="wind"></div>
+
+<h2>《绝句》 唐 · 杜甫 <span>对比整体听感</span></h2>
+<div id="jueju"></div>
+
+<div class="tip">
+听完告诉我编号即可，例如：<b>「用 4 号音色」</b> 或 <b>「2 号更顺，但 4 号吐字更清楚」</b>。<br>
+另外如果你还听出别的字读错了（比如多音字、生僻字），直接把「篇名 + 哪个字 + 应该读什么」发我，我一次性改掉。
+</div>
+
+<audio id="player" preload="none" playsinline></audio>
+<script>
+const GROUPS = {
+  wind: [
+    ['f1', '1 号 · 云健（现在用的）', '浑厚男声，语速 -10%，全站当前版本'],
+    ['f2', '2 号 · 云健，标题连读', '音色不变，标题和作者连成一句，减少单字硬起'],
+    ['f3', '3 号 · 云健，柔化处理', '音色不变，削掉一点高频毛刺，听感更顺'],
+    ['f4', '4 号 · 云扬', '新闻播报男声，吐字更硬更清楚'],
+    ['f5', '5 号 · 云希', '青年男声，偏轻快'],
+  ],
+  jueju: [
+    ['j1', '1 号 · 云健（现在用的）', '当前全站音色'],
+    ['j2', '2 号 · 云扬', '吐字更清楚，略正式'],
+    ['j3', '3 号 · 云希', '青年男声，偏轻快'],
+  ],
+};
+
+const player = document.getElementById('player');
+let rows = {};
+
+function build(hostId, list) {
+  const host = document.getElementById(hostId);
+  list.forEach(([id, name, desc]) => {
+    const el = document.createElement('div');
+    el.className = 'opt';
+    el.innerHTML = `<div class="num"></div><div class="txt"><div class="name"></div><div class="desc"></div></div><div class="state">▶</div>`;
+    el.querySelector('.num').textContent = name.split(' ')[0];
+    el.querySelector('.name').textContent = name;
+    el.querySelector('.desc').textContent = desc;
+    el.addEventListener('click', () => toggle(id));
+    rows[id] = el;
+    host.appendChild(el);
+  });
+}
+
+function paint(id, text) {
+  Object.keys(rows).forEach(k => {
+    if (k === id) {
+      rows[k].classList.toggle('on', !!text);
+      rows[k].querySelector('.state').textContent = text || '▶';
+    } else {
+      rows[k].classList.remove('on');
+      rows[k].querySelector('.state').textContent = '▶';
+    }
+  });
+}
+
+function toggle(id) {
+  const src = id + '.mp3';
+  const playing = !player.paused && player.dataset.id === id;
+  if (playing) { player.pause(); paint(id, '▶'); return; }
+  if (player.dataset.id !== id || !player.src.endsWith(src)) {
+    player.dataset.id = id;
+    player.src = src;
+  }
+  player.play().then(() => paint(id, '暂停')).catch(() => paint(id, '失败'));
+}
+
+player.addEventListener('ended', () => { paint(player.dataset.id, '▶'); });
+player.addEventListener('error', () => { if (player.dataset.id) paint(player.dataset.id, '加载失败'); });
+
+build('wind', GROUPS.wind);
+build('jueju', GROUPS.jueju);
+</script>
+</body>
+</html>
