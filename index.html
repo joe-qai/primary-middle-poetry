@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中小学古诗词合集</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-light: #4a4a4a;
+    --ink-faint: #8a8a8a;
+    --paper: #f7f3eb;
+    --paper-deep: #efe8d8;
+    --accent: #b83228;
+    --accent-soft: #d4786e;
+    --accent-bg: rgba(184, 50, 40, 0.06);
+    --gold: #c49a30;
+    --gold-soft: rgba(196, 154, 48, 0.15);
+    --radius: 4px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-soft) transparent;
+  }
+
+  body {
+    font-family: 'Noto Serif SC', '宋体', serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  /* === HEADER === */
+  .hero {
+    position: relative;
+    padding: 5rem 2rem 4rem;
+    text-align: center;
+    overflow: hidden;
+    background: linear-gradient(175deg, var(--paper-deep) 0%, var(--paper) 70%);
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--gold-soft) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-seal {
+    display: inline-block;
+    width: 72px;
+    height: 72px;
+    border: 2.5px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 900;
+    font-size: 1.1rem;
+    line-height: 1.15;
+    text-align: center;
+    padding: 6px 4px;
+    transform: rotate(3deg);
+    margin-bottom: 1.5rem;
+    letter-spacing: 2px;
+    position: relative;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+    margin-bottom: 0.8rem;
+    position: relative;
+  }
+
+  .hero .subtitle {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--ink-faint);
+    letter-spacing: 0.25em;
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    position: relative;
+  }
+
+  .hero-stat {
+    text-align: center;
+  }
+
+  .hero-stat-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+
+  .hero-stat-label {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+
+  /* === NAV === */
+  .nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(247, 243, 235, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 0 2rem;
+  }
+
+  .nav-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 52px;
+  }
+
+  .nav-btn {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    padding: 0.4rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--ink-light);
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    letter-spacing: 0.05em;
+  }
+
+  .nav-btn:hover {
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .nav-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .nav-btn .badge {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 0.7rem;
+    background: rgba(255,255,255,0.25);
+    padding: 0 5px;
+    border-radius: 10px;
+    line-height: 1.5;
+  }
+
+  .nav-btn.active .badge {
+    background: rgba(255,255,255,0.25);
+  }
+
+  .nav-btn:not(.active) .badge {
+    background: var(--paper-deep);
+    color: var(--ink-faint);
+  }
+
+  /* === MAIN === */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 5rem;
+  }
+
+  /* === SECTION === */
+  .section {
+    margin-bottom: 4rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+  }
+
+  .section-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .section-icon.primary {
+    background: var(--gold-soft);
+    color: var(--gold);
+  }
+
+  .section-icon.middle {
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .section-subtitle {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    font-weight: 300;
+  }
+
+  /* === POEM CARD === */
+  .poem-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 2rem 2rem 1.8rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .poem-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  .poem-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .poem-card.primary-card::before {
+    background: linear-gradient(90deg, var(--gold), var(--accent-soft));
+  }
+
+  .poem-card.middle-card::before {
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+  }
+
+  .poem-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  .poem-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .poem-dynasty {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    background: var(--paper);
+    padding: 2px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  .poem-tag {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+
+  .poem-tag.primary {
+    background: var(--gold-soft);
+    color: #8a6914;
+  }
+
+  .poem-tag.middle {
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .poem-author {
+    margin-left: auto;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+    font-weight: 300;
+  }
+
+  .poem-body {
+    font-size: 1.1rem;
+    line-height: 2.2;
+    text-align: center;
+    color: var(--ink);
+    margin-bottom: 1.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .poem-body p {
+    margin-bottom: 0.3rem;
+  }
+
+  .poem-note {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    font-weight: 300;
+    padding-top: 1rem;
+    border-top: 1px dashed rgba(0,0,0,0.08);
+    line-height: 1.8;
+  }
+
+  .poem-note strong {
+    color: var(--ink-light);
+    font-weight: 500;
+  }
+
+  /* === SEARCH === */
+  .search-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem 1rem;
+  }
+
+  .search-box {
+    position: relative;
+  }
+
+  .search-box input {
+    width: 100%;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.7rem 1rem 0.7rem 2.8rem;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 24px;
+    background: rgba(255,255,255,0.7);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-box input:focus {
+    border-color: var(--accent-soft);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+
+  .search-box input::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-faint);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  .no-result {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--ink-faint);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 300;
+    display: none;
+  }
+
+  .no-result.visible {
+    display: block;
+  }
+
+  /* === FOOTER === */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* === ANIMATIONS === */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .poem-card {
+    animation: fadeInUp 0.5s ease both;
+  }
+
+  .poem-card:nth-child(1) { animation-delay: 0.05s; }
+  .poem-card:nth-child(2) { animation-delay: 0.1s; }
+  .poem-card:nth-child(3) { animation-delay: 0.15s; }
+  .poem-card:nth-child(4) { animation-delay: 0.2s; }
+  .poem-card:nth-child(5) { animation-delay: 0.25s; }
+  .poem-card:nth-child(6) { animation-delay: 0.3s; }
+  .poem-card:nth-child(7) { animation-delay: 0.35s; }
+  .poem-card:nth-child(8) { animation-delay: 0.4s; }
+  .poem-card:nth-child(9) { animation-delay: 0.45s; }
+  .poem-card:nth-child(10) { animation-delay: 0.5s; }
+
+  /* === SCROLL TO TOP === */
+  .scroll-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    box-shadow: var(--shadow-lg);
+    z-index: 50;
+  }
+
+  .scroll-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .scroll-top:hover {
+    transform: scale(1.1);
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 600px) {
+    .hero { padding: 3rem 1.5rem 2.5rem; }
+    .hero-stats { gap: 1.5rem; }
+    main { padding: 1.5rem 1rem 3rem; }
+    .poem-card { padding: 1.5rem 1.2rem; }
+    .poem-body { font-size: 1rem; }
+    .nav-inner { gap: 0.2rem; }
+    .nav-btn { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-seal">诗<br>词</div>
+  <h1>中小学古诗词合集</h1>
+  <p class="subtitle">K12 · 部编版 · 经典名篇</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num" id="totalCount">20</div>
+      <div class="hero-stat-label">首诗词</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">10</div>
+      <div class="hero-stat-label">小学篇目</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">10</div>
+      <div class="hero-stat-label">初中篇目</div>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav-bar">
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="filterSection('all')">全部 <span class="badge">20</span></button>
+    <button class="nav-btn" onclick="filterSection('primary')">小学 <span class="badge">10</span></button>
+    <button class="nav-btn" onclick="filterSection('middle')">初中 <span class="badge">10</span></button>
+  </div>
+</nav>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="搜索诗词标题、作者或诗句…" oninput="handleSearch(this.value)">
+  </div>
+</div>
+
+<!-- MAIN -->
+<main id="mainContent">
+
+  <!-- 小学部分 -->
+  <section class="section" id="primary-section">
+    <div class="section-header">
+      <div class="section-icon primary">小</div>
+      <div>
+        <div class="section-title">小学篇目</div>
+        <div class="section-subtitle">一年级至六年级 · 部编版必背</div>
+      </div>
+    </div>
+
+    <!-- 1 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="咏鹅骆宾王鹅鹅鹅">
+      <div class="poem-meta">
+        <span class="poem-title">咏鹅</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag primary">一年级</span>
+        <span class="poem-author">骆宾王</span>
+      </div>
+      <div class="poem-body">
+        <p>鹅，鹅，鹅，曲项向天歌。</p>
+        <p>白毛浮绿水，红掌拨清波。</p>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="静夜思李白床前明月光">
+      <div class="poem-meta">
+        <span class="poem-title">静夜思</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag primary">一年级</span>
+        <span class="poem-author">李白</span>
+      </div>
+      <div class="poem-body">
+        <p>床前明月光，疑是地上霜。</p>
+        <p>举头望明月，低头思故乡。</p>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="春晓孟浩然春眠不觉晓处处闻啼鸟">
+      <div class="poem-meta">
+        <span class="poem-title">春晓</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag primary">一年级</span>
+        <span class="poem-author">孟浩然</span>
+      </div>
+      <div class="poem-body">
+        <p>春眠不觉晓，处处闻啼鸟。</p>
+        <p>夜来风雨声，花落知多少。</p>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="悯农李绅锄禾日当午">
+      <div class="poem-meta">
+        <span class="poem-title">悯农（其二）</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag primary">一年级</span>
+        <span class="poem-author">李绅</span>
+      </div>
+      <div class="poem-body">
+        <p>锄禾日当午，汗滴禾下土。</p>
+        <p>谁知盘中餐，粒粒皆辛苦。</p>
+      </div>
+      <div class="poem-note"><strong>赏析：</strong> 以质朴的语言告诫人们珍惜粮食，体恤农民的辛劳。</div>
+    </div>
+
+    <!-- 5 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="小池杨万里泉眼无声惜细流">
+      <div class="poem-meta">
+        <span class="poem-title">小池</span>
+        <span class="poem-dynasty">宋</span>
+        <span class="poem-tag primary">二年级</span>
+        <span class="poem-author">杨万里</span>
+      </div>
+      <div class="poem-body">
+        <p>泉眼无声惜细流，树阴照水爱晴柔。</p>
+        <p>小荷才露尖尖角，早有蜻蜓立上头。</p>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="所见袁枚牧童骑黄牛">
+      <div class="poem-meta">
+        <span class="poem-title">所见</span>
+        <span class="poem-dynasty">清</span>
+        <span class="poem-tag primary">二年级</span>
+        <span class="poem-author">袁枚</span>
+      </div>
+      <div class="poem-body">
+        <p>牧童骑黄牛，歌声振林樾。</p>
+        <p>意欲捕鸣蝉，忽然闭口立。</p>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="敕勒歌北朝民歌天苍苍">
+      <div class="poem-meta">
+        <span class="poem-title">敕勒歌</span>
+        <span class="poem-dynasty">北朝民歌</span>
+        <span class="poem-tag primary">二年级</span>
+      </div>
+      <div class="poem-body">
+        <p>敕勒川，阴山下。</p>
+        <p>天似穹庐，笼盖四野。</p>
+        <p>天苍苍，野茫茫，风吹草低见牛羊。</p>
+      </div>
+    </div>
+
+    <!-- 8 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="望庐山瀑布李白日照香炉生紫烟">
+      <div class="poem-meta">
+        <span class="poem-title">望庐山瀑布</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag primary">二年级</span>
+        <span class="poem-author">李白</span>
+      </div>
+      <div class="poem-body">
+        <p>日照香炉生紫烟，遥看瀑布挂前川。</p>
+        <p>飞流直下三千尺，疑是银河落九天。</p>
+      </div>
+    </div>
+
+    <!-- 9 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="赠汪伦李白李白乘舟将欲行">
+      <div class="poem-meta">
+        <span class="poem-title">赠汪伦</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag primary">三年级</span>
+        <span class="poem-author">李白</span>
+      </div>
+      <div class="poem-body">
+        <p>李白乘舟将欲行，忽闻岸上踏歌声。</p>
+        <p>桃花潭水深千尺，不及汪伦送我情。</p>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div class="poem-card primary-card" data-level="primary" data-search="村居高鼎草长莺飞二月天">
+      <div class="poem-meta">
+        <span class="poem-title">村居</span>
+        <span class="poem-dynasty">清</span>
+        <span class="poem-tag primary">三年级</span>
+        <span class="poem-author">高鼎</span>
+      </div>
+      <div class="poem-body">
+        <p>草长莺飞二月天，拂堤杨柳醉春烟。</p>
+        <p>儿童散学归来早，忙趁东风放纸鸢。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 初中部分 -->
+  <section class="section" id="middle-section">
+    <div class="section-header">
+      <div class="section-icon middle">初</div>
+      <div>
+        <div class="section-title">初中篇目</div>
+        <div class="section-subtitle">七年级至九年级 · 部编版必背</div>
+      </div>
+    </div>
+
+    <!-- 11 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="观沧海曹操东临碣石">
+      <div class="poem-meta">
+        <span class="poem-title">观沧海</span>
+        <span class="poem-dynasty">东汉</span>
+        <span class="poem-tag middle">七年级</span>
+        <span class="poem-author">曹操</span>
+      </div>
+      <div class="poem-body">
+        <p>东临碣石，以观沧海。</p>
+        <p>水何澹澹，山岛竦峙。</p>
+        <p>树木丛生，百草丰茂。</p>
+        <p>秋风萧瑟，洪波涌起。</p>
+        <p>日月之行，若出其中；</p>
+        <p>星汉灿烂，若出其里。</p>
+        <p>幸甚至哉，歌以咏志。</p>
+      </div>
+      <div class="poem-note"><strong>赏析：</strong> 曹操北征乌桓归来所作，借大海吞吐日月之景，抒发统一中原的壮志豪情。</div>
+    </div>
+
+    <!-- 12 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="次北固山下王湾客路青山外">
+      <div class="poem-meta">
+        <span class="poem-title">次北固山下</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag middle">七年级</span>
+        <span class="poem-author">王湾</span>
+      </div>
+      <div class="poem-body">
+        <p>客路青山外，行舟绿水前。</p>
+        <p>潮平两岸阔，风正一帆悬。</p>
+        <p>海日生残夜，江春入旧年。</p>
+        <p>乡书何处达？归雁洛阳边。</p>
+      </div>
+      <div class="poem-note"><strong>名句：</strong> 「海日生残夜，江春入旧年」蕴含新旧交替的自然哲理，被誉为盛唐气象的代表。</div>
+    </div>
+
+    <!-- 13 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="天净沙秋思马致远枯藤老树昏鸦">
+      <div class="poem-meta">
+        <span class="poem-title">天净沙·秋思</span>
+        <span class="poem-dynasty">元</span>
+        <span class="poem-tag middle">七年级</span>
+        <span class="poem-author">马致远</span>
+      </div>
+      <div class="poem-body">
+        <p>枯藤老树昏鸦，</p>
+        <p>小桥流水人家，</p>
+        <p>古道西风瘦马。</p>
+        <p>夕阳西下，断肠人在天涯。</p>
+      </div>
+      <div class="poem-note"><strong>赏析：</strong> 被誉为「秋思之祖」，以九种意象并列，勾勒出游子羁旅天涯的孤寂与愁绪。</div>
+    </div>
+
+    <!-- 14 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="钱塘湖春行白居易孤山寺北贾亭西">
+      <div class="poem-meta">
+        <span class="poem-title">钱塘湖春行</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag middle">七年级</span>
+        <span class="poem-author">白居易</span>
+      </div>
+      <div class="poem-body">
+        <p>孤山寺北贾亭西，水面初平云脚低。</p>
+        <p>几处早莺争暖树，谁家新燕啄春泥。</p>
+        <p>乱花渐欲迷人眼，浅草才能没马蹄。</p>
+        <p>最爱湖东行不足，绿杨阴里白沙堤。</p>
+      </div>
+    </div>
+
+    <!-- 15 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="夜雨寄北李商隐君问归期未有期">
+      <div class="poem-meta">
+        <span class="poem-title">夜雨寄北</span>
+        <span class="poem-dynasty">唐</span>
+        <span class="poem-tag middle">七年级</span>
+        <span class="poem-author">李商隐</span>
+      </div>
+      <div class="poem-body">
+        <p>君问归期未有期，巴山夜雨涨秋池。</p>
+        <p>何当共剪西窗烛，却话巴山夜雨时。</p>
+      </div>
+    </div>
+
+    <!-- 16 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="潼关怀古张养浩峰峦如聚">
+      <div class="poem-meta">
+        <span class="poem-title">山坡羊·潼关怀古</span>
+        <span class="poem-dynasty">元</span>
+        <span class="poem-tag middle">九年级</span>
+        <span class="poem-author">张养浩</span>
+      </div>
+      <div class="poem-body">
+        <p>峰峦如聚，波涛如怒，山河表里潼关路。</p>
+        <p>望西都，意踌躇。</p>
+        <p>伤心秦汉经行处，宫阙万间都做了土。</p>
+        <p>兴，百姓苦；亡，百姓苦。</p>
+      </div>
+      <div class="poem-note"><strong>主旨：</strong> 以潼关爱古，揭示历史沧桑，表达对百姓疾苦的深切同情，结尾两句振聋发聩。</div>
+    </div>
+
+    <!-- 17 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="己亥杂诗龚自珍浩荡离愁白日斜">
+      <div class="poem-meta">
+        <span class="poem-title">己亥杂诗（其五）</span>
+        <span class="poem-dynasty">清</span>
+        <span class="poem-tag middle">九年级</span>
+        <span class="poem-author">龚自珍</span>
+      </div>
+      <div class="poem-body">
+        <p>浩荡离愁白日斜，吟鞭东指即天涯。</p>
+        <p>落红不是无情物，化作春泥更护花。</p>
+      </div>
+      <div class="poem-note"><strong>名句：</strong> 「落红不是无情物，化作春泥更护花」以落花自喻，表达辞官仍愿为国效力的奉献精神。</div>
+    </div>
+
+    <!-- 18 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="登飞来峰王安石飞来山上千寻塔">
+      <div class="poem-meta">
+        <span class="poem-title">登飞来峰</span>
+        <span class="poem-dynasty">宋</span>
+        <span class="poem-tag middle">九年级</span>
+        <span class="poem-author">王安石</span>
+      </div>
+      <div class="poem-body">
+        <p>飞来山上千寻塔，闻说鸡鸣见日升。</p>
+        <p>不畏浮云遮望眼，自缘身在最高层。</p>
+      </div>
+    </div>
+
+    <!-- 19 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="水调歌头明月几时有苏轼中秋">
+      <div class="poem-meta">
+        <span class="poem-title">水调歌头·明月几时有</span>
+        <span class="poem-dynasty">宋</span>
+        <span class="poem-tag middle">九年级</span>
+        <span class="poem-author">苏轼</span>
+      </div>
+      <div class="poem-body">
+        <p>明月几时有？把酒问青天。</p>
+        <p>不知天上宫阙，今夕是何年。</p>
+        <p>我欲乘风归去，又恐琼楼玉宇，高处不胜寒。</p>
+        <p>起舞弄清影，何似在人间。</p>
+      </div>
+      <div class="poem-body" style="margin-top:-0.8rem;">
+        <p>转朱阁，低绮户，照无眠。</p>
+        <p>不应有恨，何事长向别时圆？</p>
+        <p>人有悲欢离合，月有阴晴圆缺，此事古难全。</p>
+        <p>但愿人长久，千里共婵娟。</p>
+      </div>
+      <div class="poem-note"><strong>名句：</strong> 「但愿人长久，千里共婵娟」是全词词眼，传达了对远方亲人的美好祝愿，豁达而深情。</div>
+    </div>
+
+    <!-- 20 -->
+    <div class="poem-card middle-card" data-level="middle" data-search="南乡子登京口北固亭有怀辛弃疾何处望神州">
+      <div class="poem-meta">
+        <span class="poem-title">南乡子·登京口北固亭有怀</span>
+        <span class="poem-dynasty">宋</span>
+        <span class="poem-tag middle">九年级</span>
+        <span class="poem-author">辛弃疾</span>
+      </div>
+      <div class="poem-body">
+        <p>何处望神州？满眼风光北固楼。</p>
+        <p>千古兴亡多少事？悠悠。不尽长江滚滚流。</p>
+        <p>年少万兜鍪，坐断东南战未休。</p>
+        <p>天下英雄谁敌手？曹刘。生子当如孙仲谋。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="no-result" id="noResult">未找到匹配的诗词</div>
+</main>
+
+<footer>
+  中小学古诗词合集 · K12 Classical Poetry Collection
+</footer>
+
+<button class="scroll-top" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="回到顶部">↑</button>
+
+<script>
+  // Data
+  const totalPoems = 20;
+
+  // Filter
+  function filterSection(level) {
+    const cards = document.querySelectorAll('.poem-card');
+    const sections = document.querySelectorAll('.section');
+    const buttons = document.querySelectorAll('.nav-btn');
+
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.nav-btn').classList.add('active');
+
+    let visibleCount = 0;
+
+    if (level === 'all') {
+      sections.forEach(s => s.style.display = '');
+      cards.forEach(card => {
+        card.style.display = '';
+        visibleCount++;
+      });
+    } else {
+      const targetSection = document.querySelector(`#${level}-section`);
+      sections.forEach(s => s.style.display = s.id === `${level}-section` ? '' : 'none');
+      cards.forEach(card => {
+        const show = card.dataset.level === level;
+        card.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+      });
+    }
+
+    document.getElementById('noResult').classList.toggle('visible', visibleCount === 0);
+  }
+
+  // Search
+  function handleSearch(query) {
+    const q = query.trim().toLowerCase();
+    const cards = document.querySelectorAll('.poem-card');
+    const sections = document.querySelectorAll('.section');
+    const noResult = document.getElementById('noResult');
+
+    // Reset nav
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.nav-btn').classList.add('active');
+    sections.forEach(s => s.style.display = '');
+
+    let count = 0;
+    cards.forEach(card => {
+      const text = card.dataset.search.toLowerCase();
+      const title = card.querySelector('.poem-title').textContent.toLowerCase();
+      const body = card.querySelector('.poem-body').textContent.toLowerCase();
+      const match = !q || text.includes(q) || title.includes(q) || body.includes(q);
+      card.style.display = match ? '' : 'none';
+      if (match) count++;
+    });
+
+    noResult.classList.toggle('visible', count === 0);
+  }
+
+  // Scroll to top button
+  const scrollBtn = document.getElementById('scrollTopBtn');
+  window.addEventListener('scroll', () => {
+    scrollBtn.classList.toggle('visible', window.scrollY > 400);
+  });
+
+  // Animate on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.poem-card').forEach(card => observer.observe(card));
+</script>
+</body>
+</html>
