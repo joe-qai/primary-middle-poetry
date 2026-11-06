@@ -429,6 +429,9 @@
     font-size: clamp(1.12rem, 3.1vw, 1.42rem);
     line-height: 2.5; letter-spacing: 0.06em; color: var(--ink);
   }
+  /* 重点考试诗句：整行加粗，便于复习时一眼锁定 */
+  .poem-lines .ln.key-line { font-weight: 700; }
+  .poem-lines .ln.key-line .ruby { font-weight: 700; }
   .ruby { ruby-position: over; }
   ruby rt {
     font-family: var(--sans); font-size: 0.58em;
@@ -657,6 +660,16 @@
 
   const byId = Object.fromEntries(allItems.map(x => [x.id, x]));
 
+  // 重点考试诗句（data.js 中的 window.POETRY_KEY_LINES）
+  const KEY_LINES = window.POETRY_KEY_LINES || {};
+  function stripAnn(s) { return String(s || '').replace(/\{([^}]*)\}/g, '').replace(/\s+/g, ''); }
+  function isKeyLine(item, line) {
+    const keys = KEY_LINES[item.id];
+    if (!keys || !keys.length) return false;
+    const plainLine = stripAnn(line);
+    return keys.some(k => plainLine.includes(stripAnn(k)));
+  }
+
   // ---- progress store ----
   let done = new Set();
   try { const raw = localStorage.getItem(STORE_KEY); if (raw) done = new Set(JSON.parse(raw)); } catch (e) {}
@@ -749,7 +762,10 @@
     if (isPoem || item.pinyin) {
       const body = item.pinyin || item.original || '';
       if (body) {
-        parts.push(`<div class="poem-lines">${rubyHTML(body).split('\n').map(l => `<div class="ln">${l || '&nbsp;'}</div>`).join('')}</div>`);
+        const rawLines = String(body).split('\n');
+        const linesHTML = rubyHTML(body).split('\n').map((l, i) =>
+          `<div class="ln${isKeyLine(item, rawLines[i]) ? ' key-line' : ''}">${l || '&nbsp;'}</div>`).join('');
+        parts.push(`<div class="poem-lines">${linesHTML}</div>`);
       }
     } else if (item.content) {
       const body = String(item.content).split('\n').map(l => `<p>${rubyHTML(l)}</p>`).join('');
