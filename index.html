@@ -432,6 +432,19 @@
     .sheet-speak { top: 0.85rem; right: 3.3rem; height: 32px; padding: 0 0.7rem; font-size: 0.72rem; }
     .sheet-close { top: 0.85rem; right: 0.9rem; width: 32px; height: 32px; }
   }
+  /* 逐句高亮跟读 */
+  .sheet-body .sent { border-radius: 4px; transition: background-color 0.16s, box-shadow 0.16s; }
+  .sheet-body .sent.speaking { background: rgba(176, 122, 64, 0.16); box-shadow: 0 0 0 3px rgba(176, 122, 64, 0.16); }
+  #sheetTitle.speaking, #sheetBy.speaking { color: var(--accent); }
+  .speak-tip {
+    position: fixed; left: 50%; bottom: 1.6rem; z-index: 999;
+    transform: translate(-50%, 0.8rem); opacity: 0; pointer-events: none;
+    max-width: 86vw; padding: 0.6rem 1rem; border-radius: 999px;
+    background: rgba(35, 30, 24, 0.92); color: #fff;
+    font-family: var(--sans); font-size: 0.8rem; line-height: 1.4; text-align: center;
+    transition: opacity 0.22s, transform 0.22s;
+  }
+  .speak-tip.on { opacity: 1; transform: translate(-50%, 0); }
 
   .sheet-body {
     overflow-y: auto;
@@ -644,6 +657,8 @@
       <button class="sheet-close" id="sheetClose" aria-label="关闭">✕</button>
     </div>
     <div class="sheet-body" id="sheetBody"></div>
+    <audio id="speakAudio" preload="none" playsinline></audio>
+    <div class="speak-tip" id="speakTip" role="status" aria-live="polite"></div>
     <div class="sheet-foot">
       <button class="btn nav-arrows" id="prevBtn"><span>‹</span> <span class="txt">上一篇</span></button>
       <button class="btn primary done-btn grow" id="doneBtn">标记已学</button>
@@ -789,12 +804,16 @@
     // 1) 正文
     if (body) {
       if (prose) {
-        const html = String(body).split('\n').map(l => `<p>${contentLineHTML(item, l)}</p>`).join('');
+        const html = String(body).split('\n').map(l =>
+          `<p>${splitRawSentences(l).map(s => `<span class="sent">${contentLineHTML(item, s)}</span>`).join('')}</p>`).join('');
         parts.push(`<div class="block"><div class="label">${item._kind === 'story' ? '故事' : '正文'}</div><div class="reader-body">${html}</div></div>`);
       } else {
         const rawLines = String(body).split('\n');
-        const linesHTML = rubyHTML(body).split('\n').map((l, i) =>
-          `<div class="ln${isKeyLine(item, rawLines[i]) ? ' key-line' : ''}">${l || '&nbsp;'}</div>`).join('');
+        const linesHTML = rawLines.map(rawLine => {
+          const inner = splitRawSentences(rawLine)
+            .map(s => `<span class="sent">${rubyHTML(s)}</span>`).join('');
+          return `<div class="ln${isKeyLine(item, rawLine) ? ' key-line' : ''}">${inner || '&nbsp;'}</div>`;
+        }).join('');
         parts.push(`<div class="poem-lines">${linesHTML}</div>`);
       }
     }
@@ -831,6 +850,21 @@
   function bodyText(item) {
     if (isProseLayout(item)) return item.content || item.pinyin || item.original || '';
     return item.pinyin || item.original || item.content || '';
+  }
+  // 句级切分：与 tools/gen_audio.py 的 split_sentences 保持一致（按行、句末标点）
+  const SENT_END = '。！？!?';
+  function splitRawSentences(raw) {
+    const out = [];
+    let buf = '';
+    for (const ch of String(raw || '')) {
+      buf += ch;
+      if (SENT_END.includes(ch)) {
+        if (buf.trim()) out.push(buf);
+        buf = '';
+      }
+    }
+    if (buf.trim()) out.push(buf);
+    return out;
   }
   // 按句读切分正文，命中重点句时只加粗该句
   function stripAnnMap(raw) {
@@ -881,11 +915,161 @@
   }
 
   // ============================================================
-  //  READ ALOUD（浏览器语音合成）
+  //  READ ALOUD（预生成音频优先，系统语音兜底）
   // ============================================================
   const synth = window.speechSynthesis || null;
   let speechQueue = [], speechIndex = 0, speechToken = 0, speechTimer = null;
   let speechActive = false, speechPaused = false, speechVoice = null, speechMale = false;
+
+  // ---- 预生成音频：页面只读同源静态文件，运行时不访问任何外部服务 ----
+  const AUDIO_BASE = './audio/';           // 将来迁 CDN 只改这一行
+  const audioEl = $('#speakAudio');
+  let audioIndex = null, audioIndexReq = null;
+  let audioMode = false, audioCues = [], audioHdr = 0, audioHl = [];
+  let audioCueIdx = -1, audioCuesId = null, lastHl = null;
+
+  function loadAudioIndex() {
+    if (!audioIndexReq) {
+      audioIndexReq = fetch(AUDIO_BASE + 'index.json', { cache: 'force-cache' })
+        .then(r => (r && r.ok ? r.json() : null))
+        .then(j => { audioIndex = j && j.items ? j : null; return audioIndex; })
+        .catch(() => { audioIndex = null; return null; });
+    }
+    return audioIndexReq;
+  }
+  function audioEntry(id) {
+    return (audioIndex && audioIndex.items && audioIndex.items[id]) || null;
+  }
+  function loadCues(id) {
+    if (audioCuesId === id) return;
+    audioCuesId = id;
+    audioCues = [];
+    audioHdr = 0;
+    audioCueIdx = -1;
+    fetch(`${AUDIO_BASE}${id}.json`, { cache: 'force-cache' })
+      .then(r => (r && r.ok ? r.json() : null))
+      .then(j => {
+        if (audioCuesId !== id || !j || !Array.isArray(j.cues)) return;
+        audioCues = j.cues;
+        audioHdr = j.hdr || 0;
+      })
+      .catch(() => {});
+  }
+
+  // ---- 提示条 ----
+  let tipTimer = null;
+  function speakTip(msg) {
+    const el = $('#speakTip');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('on');
+    if (tipTimer) clearTimeout(tipTimer);
+    tipTimer = setTimeout(() => el.classList.remove('on'), 2600);
+  }
+
+  // ---- 逐句高亮 ----
+  function collectHighlightEls() {
+    const root = $('#sheetBody');
+    return root ? Array.from(root.querySelectorAll('.sent')) : [];
+  }
+  function clearHighlight() {
+    $$('.sent.speaking').forEach(el => el.classList.remove('speaking'));
+    ['#sheetTitle', '#sheetBy'].forEach(s => {
+      const el = $(s);
+      if (el) el.classList.remove('speaking');
+    });
+    lastHl = null;
+  }
+  function setSpeaking(el) {
+    if (lastHl === el) return;
+    if (lastHl) lastHl.classList.remove('speaking');
+    lastHl = el || null;
+    if (!lastHl) return;
+    lastHl.classList.add('speaking');
+    const box = $('#sheetBody');
+    if (!box) return;
+    const r = lastHl.getBoundingClientRect();
+    const br = box.getBoundingClientRect();
+    if (r.top < br.top + 8 || r.bottom > br.bottom - 8) {
+      lastHl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+  function onAudioTime() {
+    if (!audioMode || !audioCues.length) return;
+    const t = audioEl.currentTime;
+    let i = audioCueIdx;
+    const cur = audioCues[i];
+    if (!cur || t < cur.t || t >= cur.t + cur.d + 0.08) {
+      i = -1;
+      for (let k = 0; k < audioCues.length; k++) {
+        const c = audioCues[k];
+        if (t >= c.t && t < c.t + c.d + 0.08) { i = k; break; }
+      }
+      if (i < 0) {
+        const last = audioCues[audioCues.length - 1];
+        if (t >= last.t + last.d) setSpeaking(null);
+        return;
+      }
+      audioCueIdx = i;
+    }
+    const titleEl = $('#sheetTitle'), byEl = $('#sheetBy');
+    if (i < audioHdr) {
+      if (titleEl) titleEl.classList.toggle('speaking', i === 0);
+      if (byEl) byEl.classList.toggle('speaking', i === 1);
+      setSpeaking(null);
+      return;
+    }
+    if (titleEl) titleEl.classList.remove('speaking');
+    if (byEl) byEl.classList.remove('speaking');
+    const bodyCues = audioCues.length - audioHdr;
+    if (audioHl.length === bodyCues) {
+      setSpeaking(audioHl[i - audioHdr] || null);
+      return;
+    }
+    // 句数与 DOM 不一致时按正文时间进度估算，保证仍有高亮
+    if (!bodyCues || !audioHl.length) return;
+    const first = audioCues[audioHdr], last = audioCues[audioCues.length - 1];
+    const from = first.t, to = last.t + last.d;
+    const p = to > from ? Math.min(0.999, Math.max(0, (t - from) / (to - from))) : 0;
+    setSpeaking(audioHl[Math.floor(p * audioHl.length)] || null);
+  }
+
+  function stopAudio() {
+    audioMode = false;
+    audioCuesId = null;
+    audioCues = [];
+    audioCueIdx = -1;
+    clearHighlight();
+    if (!audioEl) return;
+    try { audioEl.pause(); } catch (e) {}
+    try { audioEl.removeAttribute('src'); audioEl.load(); } catch (e) {}
+  }
+
+  function playItemAudio(item, entry) {
+    if (!audioEl) return false;
+    audioMode = true;
+    audioHl = collectHighlightEls();
+    clearHighlight();
+    audioCuesId = null;
+    loadCues(item.id);
+    audioEl.src = AUDIO_BASE + (entry.mp3 || (item.id + '.mp3'));
+    audioEl.playbackRate = 1;
+    speechActive = true;
+    speechPaused = false;
+    updateSpeakBtn();
+    const p = audioEl.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {
+        if (!audioMode) return;
+        stopAudio();
+        speechActive = false;
+        updateSpeakBtn();
+        speakTip('音频无法播放，已切换为系统语音');
+        startSpeech(item);
+      });
+    }
+    return true;
+  }
 
   // 标点停顿（毫秒）：句末长停、分号次之、逗号短停，顿号最轻
   const SPEECH_PAUSE = { '。': 440, '！': 520, '？': 500, '；': 320, '：': 250, '，': 175, '、': 90, '—': 150, '…': 260 };
@@ -986,6 +1170,7 @@
     speechIndex = 0;
     if (speechTimer) { clearTimeout(speechTimer); speechTimer = null; }
     if (synth) synth.cancel();
+    stopAudio();
     updateSpeakBtn();
   }
 
@@ -1017,27 +1202,46 @@
   }
 
   function toggleSpeech() {
-    if (!synth) {
-      alert('当前浏览器不支持语音朗读，建议使用 Chrome、Edge 或 Safari。');
-      return;
-    }
     if (speechActive) {
       if (speechPaused) {
         speechPaused = false;
-        synth.resume();
-        if (!speechTimer && !synth.speaking) {
-          speechTimer = setTimeout(() => { speechTimer = null; speakNext(speechToken); }, 80);
+        if (audioMode && audioEl) {
+          const p = audioEl.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } else if (synth) {
+          synth.resume();
+          if (!speechTimer && !synth.speaking) {
+            speechTimer = setTimeout(() => { speechTimer = null; speakNext(speechToken); }, 80);
+          }
         }
       } else {
         speechPaused = true;
-        if (speechTimer) { clearTimeout(speechTimer); speechTimer = null; }
-        synth.pause();
+        if (audioMode && audioEl) {
+          try { audioEl.pause(); } catch (e) {}
+        } else {
+          if (speechTimer) { clearTimeout(speechTimer); speechTimer = null; }
+          if (synth) synth.pause();
+        }
       }
       updateSpeakBtn();
       return;
     }
     const item = byId[currentId];
     if (!item) return;
+    const entry = audioEntry(item.id);
+    if (entry && audioEl) { playItemAudio(item, entry); return; }
+    startSpeech(item);
+  }
+
+  // 系统语音兜底：该篇没有音频、或音频播放失败时使用
+  function startSpeech(item) {
+    audioMode = false;
+    audioHl = [];
+    clearHighlight();
+    if (!synth) {
+      speakTip('当前浏览器不支持语音朗读，该篇暂无音频');
+      return;
+    }
     // 朗读顺序：标题 → 朝代 → 作者 → 正文
     const queue = [];
     const title = speechClean(item.title);
@@ -1422,6 +1626,19 @@
 
     // sheet controls
     $('#speakBtn').addEventListener('click', toggleSpeech);
+    if (audioEl) {
+      audioEl.addEventListener('timeupdate', onAudioTime);
+      audioEl.addEventListener('ended', () => { if (audioMode) stopSpeech(); });
+      audioEl.addEventListener('error', () => {
+        if (!audioMode) return;
+        const item = byId[currentId];
+        stopAudio();
+        speechActive = false;
+        updateSpeakBtn();
+        speakTip('音频加载失败，已切换为系统语音');
+        if (item) startSpeech(item);
+      });
+    }
     $('#sheetClose').addEventListener('click', closeDetail);
     $('#overlay').addEventListener('click', e => { if (e.target === $('#overlay')) closeDetail(); });
     $('#prevBtn').addEventListener('click', () => navigate(-1));
@@ -1444,6 +1661,7 @@
     }
     refreshCounts();
     renderAll();
+    loadAudioIndex();
     bind();
   }
 

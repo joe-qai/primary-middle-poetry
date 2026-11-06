@@ -23,7 +23,7 @@ https://joe-qai.github.io/primary-middle-poetry/
 
 - **难字注音**：以 ruby 注音逐字标注生僻字、易读错字，多音节词拆到每个字上，避免"张冠李戴"
 - **重点句加粗**：考试高频诗句整行加粗；文言文按句定位、句内加粗，不打断整段阅读
-- **正文朗读**：每篇详情页可一键朗读，顺序为**标题 → 朝代 → 作者 → 正文**；中文男声，按标点断句留白，疑问上扬、感叹提气、句读放缓，重点句再放慢；支持暂停 / 继续，切换篇目或关闭时自动停止
+- **正文朗读**：每篇详情页可一键朗读，顺序为**标题 → 朝代 → 作者 → 正文**。优先播放仓库内预生成的 MP3（华为自带浏览器、微信内置浏览器、QQ/UC、iOS Safari、PC 全平台可用），音频缺失或加载失败时自动退回浏览器系统语音；支持暂停 / 继续、逐句高亮跟读，切换篇目或关闭时自动停止
 - **H5 横向滑动**：移动端卡片左右顺切浏览，整页控制在两屏以内
 - **搜索与筛选**：按标题、作者、诗句、译文检索，支持小学/初中筛选
 - **学习进度**：点击「标记已学」，进度保存在浏览器 localStorage
@@ -54,6 +54,36 @@ https://joe-qai.github.io/primary-middle-poetry/
 ```
 
 散文 / 故事 / 名篇馆使用 `content`（正文）、`translation`、`analysis`、`meaning`、`points` 字段。
+
+## 朗读音频
+
+朗读采用「预生成音频优先 + 系统语音兜底」，**运行时不访问任何外部服务**：
+
+```
+audio/
+├── index.json      # 已生成篇目清单（前端据此判断是否走音频）
+├── p001.mp3        # 单篇音频，按需加载
+└── p001.json       # 逐句时间轴，用于高亮跟读
+tools/
+└── gen_audio.py    # 本地一次性生成脚本（edge-tts）
+```
+
+生成命令（开发机联网一次，产物提交进仓库即可）：
+
+```bash
+pip install edge-tts
+
+python tools/gen_audio.py --ids p001,w001,c001   # 指定篇目
+python tools/gen_audio.py --kind poem --level primary
+python tools/gen_audio.py --all                  # 全量
+python tools/gen_audio.py --ids p001 --force     # 覆盖重生成
+```
+
+- 音色：`zh-CN-YunjianNeural`（云健，浑厚男声），语速 `-10%`
+- 输出 MP3 为 24kHz / 48kbps 单声道，逐句时间轴来自 edge-tts 的 `SentenceBoundary`
+- 前端音频地址统一走 `index.html` 里的常量 `AUDIO_BASE`，将来迁 CDN 只改这一行
+- 尚未生成的篇目会自动使用 Web Speech API，因此不会出现「点击无反应」
+- 音频通过 `fetch` 读取清单，**直接双击 `index.html`（file://）时朗读会退回系统语音**，需要 HTTP 服务才能启用音频
 
 ## 本地预览
 

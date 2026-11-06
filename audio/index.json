@@ -1,0 +1,23 @@
+{
+ "voice": "zh-CN-YunjianNeural",
+ "rate": "-10%",
+ "items": {
+  "p001": {
+   "dur": 11.361,
+   "hdr": 2,
+   "bodyCues": 2
+  },
+  "w001": {
+   "dur": 32.444,
+   "hdr": 2,
+   "bodyCues": 9
+  },
+  "c001": {
+   "dur": 188.167,
+   "hdr": 2,
+   "bodyCues": 24
+  }
+ },
+ "count": 3,
+ "updated": "2026-11-06 19:58:36"
+}
