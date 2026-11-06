@@ -20,12 +20,20 @@ import argparse
 import asyncio
 import hashlib
 import json
+import os
 import re
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
 
 import edge_tts
+
+try:  # 表达力增强（分句拼接）需要 numpy；缺失时自动退回整句合成
+    import numpy as np
+except ImportError:  # pragma: no cover
+    np = None
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_JS = ROOT / "data.js"
@@ -173,17 +181,90 @@ def compose(item):
     return text, len(header), len(split_sentences(body))
 
 
-# ---------------------------------------------------------------- 合成
+# ---------------------------------------------------------------- 表达力增强
 
-async def synth(item, voice, rate, out_mp3, retries=3):
-    text, hdr, body_count = compose(item)
-    if not text:
-        raise ValueError("empty text")
+AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 
+# 重复单字的开头（如「鹅，鹅，鹅，」）整句合成时会读成一条平线：三个字音高、
+# 时长、停顿几乎一样。这里把开头拆成单字分别合成，用音高/语速阶梯造出起伏，
+# 再拼回全篇。只影响该篇的朗读音频与时间轴，页面正文与句子切分不变。
+#
+# segs: (文本, rate, pitch, volume)；gaps: 单字之间的静音（秒）
+EXPR_OPENINGS = {
+    "p001": {
+        "match": "鹅，鹅，鹅，",
+        "segs": [
+            ("鹅", "-18%", "-12Hz", "+0%"),
+            ("鹅", "-8%", "+18Hz", "+0%"),
+            ("鹅", "+2%", "+48Hz", "+0%"),
+        ],
+        "gaps": [0.22, 0.22],
+        "lead_gap": 0.28,
+        "tail_gap": 0.34,
+    },
+}
+
+
+def _tool(name):
+    """找 ffmpeg/ffprobe：环境变量 → PATH → 本机常见安装路径。"""
+    env = os.environ.get(name.upper())
+    if env and Path(env).exists():
+        return env
+    exe = shutil.which(name)
+    if exe:
+        return exe
+    suffix = ".exe" if os.name == "nt" else ""
+    cand = Path(r"D:\ffmpeg-7.0.2-full_build\bin") / (name + suffix)
+    return str(cand) if cand.exists() else None
+
+
+def _decode(data):
+    """mp3 字节 → float 采样（24kHz 单声道）。"""
+    ff = _tool("ffmpeg")
+    proc = subprocess.run(
+        [ff, "-v", "error", "-i", "pipe:0", "-f", "s16le", "-ac", "1", "-ar", str(AUDIO_SR), "pipe:1"],
+        input=data, capture_output=True, check=True,
+    )
+    return np.frombuffer(proc.stdout, dtype=np.int16).astype(np.float64) / 32768.0
+
+
+def _encode(samples):
+    """float 采样 → 48kbps mp3 字节（与 edge-tts 输出一致）。"""
+    ff = _tool("ffmpeg")
+    pcm = (np.clip(samples, -1.0, 1.0) * 32767).astype(np.int16).tobytes()
+    proc = subprocess.run(
+        [ff, "-v", "error", "-f", "s16le", "-ac", "1", "-ar", str(AUDIO_SR), "-i", "pipe:0",
+         "-b:a", "48k", "-f", "mp3", "pipe:1"],
+        input=pcm, capture_output=True, check=True,
+    )
+    return proc.stdout
+
+
+def _sil(seconds):
+    return np.zeros(int(round(seconds * AUDIO_SR)), dtype=np.float64)
+
+
+def _trim(x, th=0.012, pad=0.03):
+    """去掉首尾静音，返回 (新采样, 被裁掉的头部时长秒数)。"""
+    win = int(0.01 * AUDIO_SR)
+    if len(x) < win * 2:
+        return x, 0.0
+    n = len(x) // win
+    energy = np.sqrt((x[: n * win].reshape(n, win) ** 2).mean(axis=1))
+    idx = np.where(energy > th)[0]
+    if not len(idx):
+        return x, 0.0
+    a = max(0, int(idx[0] * win - pad * AUDIO_SR))
+    b = min(len(x), int((idx[-1] + 1) * win + pad * AUDIO_SR))
+    return x[a:b], a / AUDIO_SR
+
+
+async def speak(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
+    """合成一段文本，返回 (mp3 字节, cues)。"""
     last_err = None
     for attempt in range(1, retries + 1):
         try:
-            communicate = edge_tts.Communicate(text, voice, rate=rate)
+            communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch, volume=volume)
             cues = []
             audio = bytearray()
             async for chunk in communicate.stream():
@@ -197,25 +278,108 @@ async def synth(item, voice, rate, out_mp3, retries=3):
                     })
             if not audio:
                 raise RuntimeError("no audio received")
-            out_mp3.write_bytes(bytes(audio))
-            dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
-            meta = {
-                "id": item["id"],
-                "title": item.get("title", ""),
-                "voice": voice,
-                "rate": rate,
-                "dur": dur,
-                "hdr": hdr,
-                "bodyCues": body_count,
-                "v": hashlib.md5(bytes(audio)).hexdigest()[:8],
-                "cues": cues,
-            }
-            return meta
+            return bytes(audio), cues
         except Exception as exc:  # noqa: BLE001
             last_err = exc
             if attempt < retries:
                 await asyncio.sleep(1.5 * attempt)
-    raise RuntimeError(f"{item['id']} 合成失败：{last_err}")
+    raise RuntimeError(f"合成失败：{last_err}")
+
+
+async def synth_expr(item, voice, rate, out_mp3, spec):
+    """分句拼接版：重复字开头做音高/节奏起伏，其余部分照常合成。"""
+    title = tts_clean(item.get("title"))
+    who = "，".join(x for x in (dynasty_text(item.get("dynasty")), tts_clean(item.get("author"))) if x)
+    header = [x for x in (title, who) if x]
+    body = pause_before_er(tts_clean(body_text(item)))
+    opening = spec["match"]
+    if not body.startswith(opening):
+        return await synth_plain(item, voice, rate, out_mp3)
+
+    rest = body[len(opening):].lstrip("\n")
+    head_bytes, head_cues = await speak("\n".join(header), voice, rate)
+    rest_bytes, rest_cues = await speak(rest, voice, rate)
+    seg_bytes = []
+    for (seg_text, seg_rate, seg_pitch, seg_vol) in spec["segs"]:
+        seg_bytes.append(await speak(seg_text, voice, seg_rate, seg_pitch, seg_vol))
+
+    head_x, head_lead = _trim(_decode(head_bytes))
+    rest_x, rest_lead = _trim(_decode(rest_bytes))
+    seg_x = [_trim(_decode(b[0]))[0] for b in seg_bytes]
+
+    gaps = spec.get("gaps") or [0.22] * (len(seg_x) - 1)
+    parts = [head_x, _sil(spec.get("lead_gap", 0.28))]
+    open_start = sum(len(p) for p in parts) / AUDIO_SR
+    for i, x in enumerate(seg_x):
+        parts.append(x)
+        if i < len(gaps):
+            parts.append(_sil(gaps[i]))
+    parts.append(_sil(spec.get("tail_gap", 0.34)))
+    rest_start = sum(len(p) for p in parts) / AUDIO_SR
+    parts.append(rest_x)
+
+    audio = _encode(np.concatenate(parts))
+    out_mp3.write_bytes(audio)
+    total = sum(len(p) for p in parts) / AUDIO_SR
+
+    cues = [{"t": round(max(0.0, c["t"] - head_lead), 3), "d": c["d"], "s": c["s"]} for c in head_cues]
+    for i, c in enumerate(rest_cues):
+        # 第一句的 cue 从开头第一个「鹅」算起，覆盖到「曲项向天歌。」结束，
+        # 这样前端逐句高亮的句数仍与正文一致。
+        t = rest_start + c["t"] - rest_lead
+        if i == 0:
+            cues.append({"t": round(open_start, 3),
+                         "d": round(max(0.0, t + c["d"] - open_start), 3),
+                         "s": opening + c["s"]})
+        else:
+            cues.append({"t": round(t, 3), "d": c["d"], "s": c["s"]})
+
+    # edge-tts 的末句 cue 会把尾部静音也算进去，这里按真实音频裁掉，
+    # 同时避免相邻 cue 重叠。
+    for i, c in enumerate(cues):
+        nxt = cues[i + 1]["t"] if i + 1 < len(cues) else total
+        c["d"] = round(max(0.05, min(c["t"] + c["d"], nxt) - c["t"]), 3)
+
+    return {
+        "id": item["id"],
+        "title": item.get("title", ""),
+        "voice": voice,
+        "rate": rate,
+        "dur": round(total, 3),
+        "hdr": len(header),
+        "bodyCues": len(rest_cues),
+        "v": hashlib.md5(audio).hexdigest()[:8],
+        "cues": cues,
+    }
+
+
+# ---------------------------------------------------------------- 合成
+
+async def synth(item, voice, rate, out_mp3):
+    spec = EXPR_OPENINGS.get(item["id"])
+    if spec and np is not None and _tool("ffmpeg"):
+        return await synth_expr(item, voice, rate, out_mp3, spec)
+    return await synth_plain(item, voice, rate, out_mp3)
+
+
+async def synth_plain(item, voice, rate, out_mp3):
+    text, hdr, body_count = compose(item)
+    if not text:
+        raise ValueError("empty text")
+    audio, cues = await speak(text, voice, rate)
+    out_mp3.write_bytes(audio)
+    dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
+    return {
+        "id": item["id"],
+        "title": item.get("title", ""),
+        "voice": voice,
+        "rate": rate,
+        "dur": dur,
+        "hdr": hdr,
+        "bodyCues": body_count,
+        "v": hashlib.md5(audio).hexdigest()[:8],
+        "cues": cues,
+    }
 
 
 async def run(args):
