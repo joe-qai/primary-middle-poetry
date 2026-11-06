@@ -2,953 +2,1136 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>中小学古诗词合集</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>墨韵 · 中小学古诗词全集</title>
+<meta name="description" content="K12 必背古诗词、文言文、散文、故事与课外扩展，含拼音、译文、赏析与考点。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #1a1a1a;
-    --ink-light: #4a4a4a;
-    --ink-faint: #8a8a8a;
-    --paper: #f7f3eb;
-    --paper-deep: #efe8d8;
-    --accent: #b83228;
-    --accent-soft: #d4786e;
-    --accent-bg: rgba(184, 50, 40, 0.06);
-    --gold: #c49a30;
-    --gold-soft: rgba(196, 154, 48, 0.15);
-    --radius: 4px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-    --shadow-lg: 0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    --ink: #20201d;
+    --ink-2: #46443e;
+    --ink-3: #6f6b62;
+    --ink-4: #9a958a;
+    --paper: #f6f1e7;
+    --paper-2: #efe7d6;
+    --card: #fffdf8;
+    --line: rgba(60, 45, 20, 0.10);
+    --line-strong: rgba(60, 45, 20, 0.18);
+    --accent: #a8342a;
+    --accent-2: #c4594d;
+    --accent-bg: rgba(168, 52, 42, 0.07);
+    --jade: #2f6f5e;
+    --jade-bg: rgba(47, 111, 94, 0.09);
+    --gold: #b5852b;
+    --gold-bg: rgba(181, 133, 43, 0.12);
+    --radius: 6px;
+    --radius-lg: 14px;
+    --shadow-1: 0 1px 2px rgba(60,45,20,0.05), 0 2px 10px rgba(60,45,20,0.05);
+    --shadow-2: 0 2px 6px rgba(60,45,20,0.07), 0 12px 32px rgba(60,45,20,0.09);
+    --serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+    --sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  html {
-    scroll-behavior: smooth;
-    font-size: 16px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent-soft) transparent;
-  }
-
+  html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--accent-2) transparent; }
   body {
-    font-family: 'Noto Serif SC', '宋体', serif;
+    font-family: var(--serif);
     background: var(--paper);
     color: var(--ink);
-    line-height: 1.8;
-    min-height: 100vh;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-
-  /* === HEADER === */
-  .hero {
-    position: relative;
-    padding: 5rem 2rem 4rem;
-    text-align: center;
-    overflow: hidden;
-    background: linear-gradient(175deg, var(--paper-deep) 0%, var(--paper) 70%);
-  }
-
-  .hero::before {
+  body::before {
     content: '';
-    position: absolute;
-    top: -120px;
-    left: 50%;
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(181,133,43,0.05), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(168,52,42,0.04), transparent 45%);
+    pointer-events: none; z-index: 0;
+  }
+  ::selection { background: rgba(168,52,42,0.16); }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: rgba(168,52,42,0.35); border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(168,52,42,0.55); }
+
+  /* ============ HERO ============ */
+  .hero {
+    position: relative; z-index: 1;
+    padding: clamp(3rem, 8vw, 5.5rem) 1.5rem clamp(2rem, 5vw, 3.5rem);
+    text-align: center;
+    background: linear-gradient(178deg, var(--paper-2) 0%, rgba(239,231,214,0.35) 55%, transparent 100%);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; left: 50%; top: 8%;
+    width: min(760px, 130%); aspect-ratio: 1;
     transform: translateX(-50%);
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, var(--gold-soft) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(181,133,43,0.10), transparent 62%);
     pointer-events: none;
   }
-
-  .hero-seal {
-    display: inline-block;
-    width: 72px;
-    height: 72px;
-    border: 2.5px solid var(--accent);
+  .seal {
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 66px; height: 66px;
+    border: 2px solid var(--accent);
     color: var(--accent);
-    font-family: 'Noto Serif SC', serif;
-    font-weight: 900;
-    font-size: 1.1rem;
-    line-height: 1.15;
-    text-align: center;
-    padding: 6px 4px;
+    border-radius: 5px;
+    font-weight: 900; font-size: 1.05rem; line-height: 1.05;
+    letter-spacing: 0.08em;
     transform: rotate(3deg);
-    margin-bottom: 1.5rem;
-    letter-spacing: 2px;
-    position: relative;
+    margin-bottom: 1.6rem;
+    position: relative; z-index: 1;
+    box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px rgba(168,52,42,0.25);
+    background: rgba(255,255,255,0.25);
   }
-
   .hero h1 {
-    font-size: clamp(2rem, 5vw, 3.2rem);
-    font-weight: 900;
-    letter-spacing: 0.15em;
-    color: var(--ink);
-    margin-bottom: 0.8rem;
-    position: relative;
+    position: relative; z-index: 1;
+    font-size: clamp(2.1rem, 5.5vw, 3.4rem);
+    font-weight: 900; letter-spacing: 0.14em;
+    margin-bottom: 0.7rem;
   }
-
-  .hero .subtitle {
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 300;
-    color: var(--ink-faint);
-    letter-spacing: 0.25em;
-    margin-bottom: 2.5rem;
-    position: relative;
+  .hero h1 .dot { color: var(--accent); }
+  .hero-sub {
+    position: relative; z-index: 1;
+    font-family: var(--sans); font-weight: 300;
+    font-size: clamp(0.82rem, 2.2vw, 0.98rem);
+    color: var(--ink-3); letter-spacing: 0.3em;
+    margin-bottom: 2.4rem;
   }
-
   .hero-stats {
-    display: flex;
-    justify-content: center;
-    gap: 3rem;
-    position: relative;
-  }
-
-  .hero-stat {
-    text-align: center;
-  }
-
-  .hero-stat-num {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1.2;
-  }
-
-  .hero-stat-label {
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.78rem;
-    color: var(--ink-faint);
-    letter-spacing: 0.1em;
-    margin-top: 2px;
-  }
-
-  /* === NAV === */
-  .nav-bar {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(247, 243, 235, 0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    padding: 0 2rem;
-  }
-
-  .nav-inner {
-    max-width: 900px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    height: 52px;
-  }
-
-  .nav-btn {
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 400;
-    padding: 0.4rem 1rem;
-    border: none;
-    background: transparent;
-    color: var(--ink-light);
-    cursor: pointer;
-    border-radius: 20px;
-    transition: all 0.2s ease;
-    letter-spacing: 0.05em;
-  }
-
-  .nav-btn:hover {
-    background: var(--accent-bg);
-    color: var(--accent);
-  }
-
-  .nav-btn.active {
-    background: var(--accent);
-    color: #fff;
-  }
-
-  .nav-btn .badge {
-    display: inline-block;
-    margin-left: 4px;
-    font-size: 0.7rem;
-    background: rgba(255,255,255,0.25);
-    padding: 0 5px;
-    border-radius: 10px;
-    line-height: 1.5;
-  }
-
-  .nav-btn.active .badge {
-    background: rgba(255,255,255,0.25);
-  }
-
-  .nav-btn:not(.active) .badge {
-    background: var(--paper-deep);
-    color: var(--ink-faint);
-  }
-
-  /* === MAIN === */
-  main {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 2.5rem 2rem 5rem;
-  }
-
-  /* === SECTION === */
-  .section {
-    margin-bottom: 4rem;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(0,0,0,0.07);
-  }
-
-  .section-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    flex-shrink: 0;
-  }
-
-  .section-icon.primary {
-    background: var(--gold-soft);
-    color: var(--gold);
-  }
-
-  .section-icon.middle {
-    background: var(--accent-bg);
-    color: var(--accent);
-  }
-
-  .section-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-  }
-
-  .section-subtitle {
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.8rem;
-    color: var(--ink-faint);
-    font-weight: 300;
-  }
-
-  /* === POEM CARD === */
-  .poem-card {
-    background: #fff;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 2rem 2rem 1.8rem;
-    margin-bottom: 1.5rem;
-    position: relative;
-    border: 1px solid rgba(0,0,0,0.04);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-  }
-
-  .poem-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
-  }
-
-  .poem-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    border-radius: var(--radius) var(--radius) 0 0;
-  }
-
-  .poem-card.primary-card::before {
-    background: linear-gradient(90deg, var(--gold), var(--accent-soft));
-  }
-
-  .poem-card.middle-card::before {
-    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
-  }
-
-  .poem-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 1.2rem;
+    position: relative; z-index: 1;
+    display: flex; justify-content: center; gap: clamp(1.4rem, 5vw, 3.6rem);
     flex-wrap: wrap;
   }
-
-  .poem-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-  }
-
-  .poem-dynasty {
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 400;
-    color: var(--ink-faint);
-    background: var(--paper);
-    padding: 2px 10px;
-    border-radius: 20px;
-    letter-spacing: 0.05em;
-  }
-
-  .poem-tag {
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.7rem;
-    padding: 2px 8px;
-    border-radius: 3px;
-    letter-spacing: 0.05em;
-  }
-
-  .poem-tag.primary {
-    background: var(--gold-soft);
-    color: #8a6914;
-  }
-
-  .poem-tag.middle {
-    background: var(--accent-bg);
-    color: var(--accent);
-  }
-
-  .poem-author {
-    margin-left: auto;
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.85rem;
-    color: var(--ink-light);
-    font-weight: 300;
-  }
-
-  .poem-body {
-    font-size: 1.1rem;
-    line-height: 2.2;
-    text-align: center;
-    color: var(--ink);
-    margin-bottom: 1.2rem;
-    letter-spacing: 0.05em;
-  }
-
-  .poem-body p {
-    margin-bottom: 0.3rem;
-  }
-
-  .poem-note {
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.8rem;
-    color: var(--ink-faint);
-    font-weight: 300;
-    padding-top: 1rem;
-    border-top: 1px dashed rgba(0,0,0,0.08);
-    line-height: 1.8;
-  }
-
-  .poem-note strong {
-    color: var(--ink-light);
-    font-weight: 500;
-  }
-
-  /* === SEARCH === */
-  .search-wrap {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 2rem 1rem;
-  }
-
-  .search-box {
-    position: relative;
-  }
-
-  .search-box input {
-    width: 100%;
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.95rem;
-    padding: 0.7rem 1rem 0.7rem 2.8rem;
-    border: 1.5px solid rgba(0,0,0,0.1);
-    border-radius: 24px;
-    background: rgba(255,255,255,0.7);
-    color: var(--ink);
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .search-box input:focus {
-    border-color: var(--accent-soft);
-    box-shadow: 0 0 0 3px var(--accent-bg);
-  }
-
-  .search-box input::placeholder {
-    color: var(--ink-faint);
-  }
-
-  .search-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--ink-faint);
-    font-size: 1rem;
-    pointer-events: none;
-  }
-
-  .no-result {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--ink-faint);
-    font-family: 'Noto Sans SC', sans-serif;
-    font-weight: 300;
-    display: none;
-  }
-
-  .no-result.visible {
+  .stat { text-align: center; }
+  .stat b {
     display: block;
+    font-family: var(--sans); font-size: clamp(1.35rem, 4vw, 1.9rem);
+    font-weight: 700; color: var(--accent); line-height: 1.1;
+  }
+  .stat span {
+    font-family: var(--sans); font-size: 0.72rem; font-weight: 400;
+    color: var(--ink-4); letter-spacing: 0.12em;
   }
 
-  /* === FOOTER === */
-  footer {
-    text-align: center;
-    padding: 2rem;
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.78rem;
-    color: var(--ink-faint);
-    letter-spacing: 0.1em;
-    border-top: 1px solid rgba(0,0,0,0.06);
+  /* ============ NAV ============ */
+  .navbar {
+    position: sticky; top: 0; z-index: 60;
+    background: rgba(246,241,231,0.86);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    border-bottom: 1px solid var(--line);
   }
-
-  /* === ANIMATIONS === */
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+  .nav-inner {
+    max-width: 1080px; margin: 0 auto;
+    display: flex; align-items: center; gap: 0.15rem;
+    padding: 0 1rem; height: 56px;
+    overflow-x: auto; scrollbar-width: none;
   }
-
-  .poem-card {
-    animation: fadeInUp 0.5s ease both;
+  .nav-inner::-webkit-scrollbar { display: none; }
+  .nav-btn {
+    flex-shrink: 0;
+    font-family: var(--sans); font-size: 0.86rem; font-weight: 400;
+    padding: 0.42rem 0.95rem; border: none; background: transparent;
+    color: var(--ink-2); cursor: pointer; border-radius: 22px;
+    transition: background 0.2s, color 0.2s;
+    letter-spacing: 0.04em; white-space: nowrap;
   }
+  .nav-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .nav-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 10px rgba(168,52,42,0.28); }
+  .nav-btn .n {
+    font-size: 0.68rem; opacity: 0.7; margin-left: 3px;
+  }
+  .nav-spacer { flex: 1; }
+  .progress-pill {
+    flex-shrink: 0;
+    font-family: var(--sans); font-size: 0.72rem;
+    color: var(--jade); background: var(--jade-bg);
+    padding: 0.3rem 0.7rem; border-radius: 20px; white-space: nowrap;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .progress-pill b { font-weight: 700; }
 
-  .poem-card:nth-child(1) { animation-delay: 0.05s; }
-  .poem-card:nth-child(2) { animation-delay: 0.1s; }
-  .poem-card:nth-child(3) { animation-delay: 0.15s; }
-  .poem-card:nth-child(4) { animation-delay: 0.2s; }
-  .poem-card:nth-child(5) { animation-delay: 0.25s; }
-  .poem-card:nth-child(6) { animation-delay: 0.3s; }
-  .poem-card:nth-child(7) { animation-delay: 0.35s; }
-  .poem-card:nth-child(8) { animation-delay: 0.4s; }
-  .poem-card:nth-child(9) { animation-delay: 0.45s; }
-  .poem-card:nth-child(10) { animation-delay: 0.5s; }
+  /* ============ TOOLBAR ============ */
+  .toolbar {
+    max-width: 1080px; margin: 0 auto;
+    padding: 1.5rem 1.5rem 0.5rem;
+    display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: center;
+  }
+  .search {
+    position: relative; flex: 1; min-width: 220px;
+  }
+  .search input {
+    width: 100%;
+    font-family: var(--sans); font-size: 0.92rem;
+    padding: 0.66rem 1rem 0.66rem 2.6rem;
+    border: 1.5px solid var(--line-strong); border-radius: 24px;
+    background: rgba(255,253,248,0.9); color: var(--ink);
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 4px var(--accent-bg); }
+  .search input::placeholder { color: var(--ink-4); }
+  .search .ico {
+    position: absolute; left: 0.95rem; top: 50%; transform: translateY(-50%);
+    color: var(--ink-4); font-size: 1rem; pointer-events: none;
+  }
+  .chip-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--sans); font-size: 0.76rem; font-weight: 400;
+    padding: 0.38rem 0.8rem; border-radius: 20px;
+    border: 1px solid var(--line-strong); background: transparent;
+    color: var(--ink-2); cursor: pointer; transition: all 0.18s;
+    letter-spacing: 0.03em;
+  }
+  .chip:hover { border-color: var(--accent-2); color: var(--accent); }
+  .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-  /* === SCROLL TO TOP === */
-  .scroll-top {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    width: 40px;
-    height: 40px;
+  /* ============ MAIN / SECTIONS ============ */
+  main { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0.5rem 1.5rem 6rem; }
+
+  .panel { display: none; animation: panelIn 0.35s ease both; }
+  .panel.on { display: block; }
+  @keyframes panelIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  .sec-head {
+    display: flex; align-items: flex-end; gap: 1rem;
+    margin: 2.2rem 0 1.3rem; padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .sec-head .glyph {
+    width: 46px; height: 46px; flex-shrink: 0;
+    display: grid; place-items: center;
     border-radius: 50%;
-    background: var(--accent);
-    color: #fff;
-    border: none;
+    font-size: 1.15rem; font-weight: 700;
+    background: var(--gold-bg); color: var(--gold);
+    border: 1px solid rgba(181,133,43,0.25);
+  }
+  .sec-head.v .glyph { background: var(--accent-bg); color: var(--accent); border-color: rgba(168,52,42,0.22); }
+  .sec-head.j .glyph { background: var(--jade-bg); color: var(--jade); border-color: rgba(47,111,94,0.22); }
+  .sec-head h2 { font-size: 1.28rem; font-weight: 700; letter-spacing: 0.1em; line-height: 1.3; }
+  .sec-head p { font-family: var(--sans); font-size: 0.76rem; font-weight: 300; color: var(--ink-4); letter-spacing: 0.08em; }
+  .sec-head .cnt { margin-left: auto; font-family: var(--sans); font-size: 0.76rem; color: var(--ink-4); }
+
+  /* ============ CARD GRID ============ */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .swipe-hint {
+    display: none;
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    color: var(--ink-4);
+    letter-spacing: 0.08em;
+    text-align: right;
+    padding: 0 0.2rem 0.35rem;
+  }
+
+  /* ---- H5：横向顺切卡片，压缩纵向高度 ---- */
+  @media (max-width: 720px) {
+    .hero { padding: 1.6rem 1.2rem 1.1rem; }
+    .seal { width: 46px; height: 46px; font-size: 0.78rem; margin-bottom: 0.7rem; }
+    .hero h1 { font-size: 1.7rem; letter-spacing: 0.1em; margin-bottom: 0.35rem; }
+    .hero-sub { font-size: 0.68rem; letter-spacing: 0.16em; margin-bottom: 0.9rem; }
+    .hero-stats { gap: 1.4rem; }
+    .stat b { font-size: 1.15rem; }
+    .stat span { font-size: 0.62rem; letter-spacing: 0.04em; }
+
+    .nav-inner { height: 48px; padding: 0 0.7rem; }
+    .nav-btn { font-size: 0.8rem; padding: 0.36rem 0.72rem; }
+
+    .toolbar { padding: 0.9rem 1rem 0.2rem; gap: 0.5rem; }
+    .search input { padding: 0.55rem 0.9rem 0.55rem 2.3rem; font-size: 0.85rem; }
+
+    main { padding: 0.2rem 1rem 2rem; }
+    .sec-head { margin: 1.1rem 0 0.7rem; padding-bottom: 0.55rem; gap: 0.6rem; }
+    .sec-head .glyph { width: 34px; height: 34px; font-size: 0.9rem; }
+    .sec-head h2 { font-size: 1.02rem; }
+    .sec-head p { font-size: 0.66rem; }
+    .sec-head .cnt { font-size: 0.68rem; }
+
+    .swipe-hint { display: block; text-align: center; font-size: 0.66rem; padding-bottom: 0.3rem; }
+
+    .grid {
+      display: flex;
+      gap: 0.7rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-padding-left: 0.1rem;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      scroll-behavior: smooth;
+      padding: 0.1rem 1.1rem 0.75rem 0.1rem;
+      margin: 0;
+      scrollbar-width: none;
+    }
+    .grid::-webkit-scrollbar { display: none; }
+
+    .card {
+      flex: 0 0 80%;
+      scroll-snap-align: start;
+      padding: 1rem 1.05rem 0.9rem;
+    }
+    .card:last-child { margin-right: 0.1rem; }
+    .card-title { font-size: 1.02rem; }
+    .card-excerpt { font-size: 0.9rem; line-height: 1.75; -webkit-line-clamp: 2; margin-bottom: 0.5rem; }
+  }
+
+  .card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.3rem 1.1rem;
     cursor: pointer;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    box-shadow: var(--shadow-1);
+    transition: transform 0.24s cubic-bezier(.2,.8,.2,1), box-shadow 0.24s, border-color 0.24s;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, var(--gold), var(--accent-2));
+    opacity: 0.85; transition: width 0.24s;
+  }
+  .card.v::before { background: linear-gradient(180deg, var(--accent), var(--accent-2)); }
+  .card.j::before { background: linear-gradient(180deg, var(--jade), #4f9a86); }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-2);
+    border-color: rgba(168,52,42,0.22);
+  }
+  .card:hover::before { width: 4px; }
+  .card:active { transform: translateY(-1px) scale(0.995); }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .card-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.55rem; }
+  .card-title { font-size: 1.08rem; font-weight: 700; letter-spacing: 0.06em; }
+  .dyn {
+    font-family: var(--sans); font-size: 0.68rem;
+    color: var(--ink-3); background: var(--paper-2);
+    padding: 1px 8px; border-radius: 20px; letter-spacing: 0.05em;
+  }
+  .grade-badge {
+    font-family: var(--sans); font-size: 0.66rem;
+    color: var(--gold); background: var(--gold-bg);
+    padding: 1px 7px; border-radius: 4px; font-weight: 500;
+  }
+  .card-author {
+    margin-left: auto; font-family: var(--sans);
+    font-size: 0.78rem; color: var(--ink-3);
+  }
+  .card-excerpt {
+    font-size: 0.95rem; color: var(--ink-2); line-height: 1.9;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; margin-bottom: 0.7rem;
+  }
+  .card-foot { display: flex; align-items: center; gap: 0.45rem; }
+  .tag2 {
+    font-family: var(--sans); font-size: 0.66rem;
+    color: var(--accent); background: var(--accent-bg);
+    padding: 1px 7px; border-radius: 4px;
+  }
+  .done-mark {
+    margin-left: auto;
+    font-family: var(--sans); font-size: 0.68rem;
+    color: var(--jade); display: flex; align-items: center; gap: 0.25rem;
+  }
+  .done-mark .dotg {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--jade);
+    box-shadow: 0 0 0 3px var(--jade-bg);
+  }
+  .card.is-done { border-color: rgba(47,111,94,0.3); }
+  .card.is-done::before { background: linear-gradient(180deg, var(--jade), #4f9a86); }
+
+  /* ============ EMPTY ============ */
+  .empty {
+    display: none; text-align: center; padding: 4rem 1rem;
+    font-family: var(--sans); font-weight: 300; color: var(--ink-4);
+  }
+  .empty.on { display: block; }
+  .empty .big { font-size: 2.2rem; opacity: 0.4; margin-bottom: 0.6rem; }
+
+  /* ============ DETAIL MODAL ============ */
+  .overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(32,32,29,0.42);
+    backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.28s ease;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+  }
+  .overlay.on { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: relative;
+    width: 100%;
+    max-width: 820px;
+    min-width: 0;
+    max-height: 100dvh;
+    background: var(--card);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: -10px 0 60px rgba(0,0,0,0.2);
+    display: flex; flex-direction: column;
+    transform: translateY(28px) scale(0.985);
     opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s, transform 0.3s;
-    box-shadow: var(--shadow-lg);
-    z-index: 50;
+    transition: transform 0.34s cubic-bezier(.2,.85,.25,1), opacity 0.28s;
+    overflow: hidden;
+  }
+  .overlay.on .sheet { transform: none; opacity: 1; }
+  @media (min-width: 720px) {
+    .overlay { padding: 2.2rem; }
+    .sheet { border-radius: var(--radius-lg); max-height: calc(100dvh - 4.4rem); }
   }
 
-  .scroll-top.visible {
-    opacity: 1;
-    pointer-events: auto;
+  .sheet-head {
+    position: relative; flex-shrink: 0;
+    padding: 1.5rem 1.7rem 1.1rem;
+    background: linear-gradient(180deg, var(--paper-2), var(--card));
+    border-bottom: 1px solid var(--line);
+  }
+  .sheet-head .kicker {
+    font-family: var(--sans); font-size: 0.72rem; letter-spacing: 0.12em;
+    color: var(--ink-4); margin-bottom: 0.35rem; display: flex; gap: 0.5rem; align-items: center;
+    flex-wrap: wrap;
+  }
+  .sheet-head h2 { font-size: clamp(1.35rem, 3.6vw, 1.75rem); font-weight: 900; letter-spacing: 0.08em; line-height: 1.3; }
+  .sheet-head .by { font-family: var(--sans); font-size: 0.85rem; color: var(--ink-3); margin-top: 0.3rem; }
+  .sheet-close {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--line-strong); background: rgba(255,253,248,0.85);
+    color: var(--ink-2); font-size: 1.1rem; cursor: pointer;
+    display: grid; place-items: center; transition: all 0.18s;
+  }
+  .sheet-close:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .sheet-body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 0;
+    padding: 1.5rem 1.7rem 2rem;
+    overscroll-behavior: contain;
+  }
+  @media (max-width: 520px) { .sheet-head { padding: 1.2rem 1.1rem 0.9rem; } .sheet-body { padding: 1.2rem 1.1rem 1.6rem; } }
+
+  /* poem display */
+  .poem-lines { text-align: center; margin: 0.6rem 0 1.6rem; }
+  .poem-lines .ln {
+    font-size: clamp(1.12rem, 3.1vw, 1.42rem);
+    line-height: 2.5; letter-spacing: 0.06em; color: var(--ink);
+  }
+  .ruby { ruby-position: over; }
+  ruby rt {
+    font-family: var(--sans); font-size: 0.58em;
+    color: var(--accent); font-weight: 400;
+    letter-spacing: 0; line-height: 1;
   }
 
-  .scroll-top:hover {
-    transform: scale(1.1);
+  .block { margin-bottom: 1.4rem; }
+  .block > .label {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-family: var(--sans); font-size: 0.74rem; font-weight: 500;
+    letter-spacing: 0.1em; color: var(--accent);
+    margin-bottom: 0.55rem;
+  }
+  .block > .label::before { content: ''; width: 14px; height: 2px; background: var(--accent-2); border-radius: 2px; }
+  .block.j > .label { color: var(--jade); }
+  .block.j > .label::before { background: var(--jade); }
+  .block p { font-size: 0.96rem; color: var(--ink-2); line-height: 1.95; text-align: justify; overflow-wrap: anywhere; word-break: break-word; }
+  .block p + p { margin-top: 0.5rem; }
+
+  .points { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+  .points li {
+    position: relative; padding-left: 1.5rem;
+    font-size: 0.92rem; color: var(--ink-2); line-height: 1.7;
+  }
+  .points li::before {
+    content: '考'; position: absolute; left: 0; top: 0.18em;
+    font-family: var(--sans); font-size: 0.6rem; font-weight: 700;
+    color: var(--gold); background: var(--gold-bg);
+    width: 1.15rem; height: 1.15rem; border-radius: 3px;
+    display: grid; place-items: center;
   }
 
-  /* === RESPONSIVE === */
-  @media (max-width: 600px) {
-    .hero { padding: 3rem 1.5rem 2.5rem; }
-    .hero-stats { gap: 1.5rem; }
-    main { padding: 1.5rem 1rem 3rem; }
-    .poem-card { padding: 1.5rem 1.2rem; }
-    .poem-body { font-size: 1rem; }
-    .nav-inner { gap: 0.2rem; }
-    .nav-btn { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+  .sheet-foot {
+    flex-shrink: 0; padding: 0.8rem 1.7rem;
+    border-top: 1px solid var(--line);
+    display: flex; gap: 0.6rem; align-items: center;
+    background: var(--card);
+  }
+  .btn {
+    font-family: var(--sans); font-size: 0.84rem; font-weight: 500;
+    padding: 0.6rem 1.2rem; border-radius: 22px; border: 1.5px solid var(--line-strong);
+    background: transparent; color: var(--ink-2); cursor: pointer;
+    transition: all 0.18s; letter-spacing: 0.03em;
+  }
+  .btn:hover { border-color: var(--accent-2); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+  .btn.done-btn.done { background: var(--jade); border-color: var(--jade); color: #fff; }
+  .btn.grow { flex: 1; }
+  .nav-arrows { display: flex; gap: 0.5rem; }
+  .nav-arrows .btn { padding: 0.6rem 0.8rem; }
+  @media (max-width: 520px) { .nav-arrows .btn .txt { display: none; } }
+
+  /* ============ PROGRESS PANEL ============ */
+  .prog-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  @media (max-width: 680px) { .prog-wrap { grid-template-columns: 1fr; } }
+  .prog-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 1.4rem 1.5rem; box-shadow: var(--shadow-1);
+  }
+  .prog-card h3 { font-size: 1rem; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+  .prog-card .sub { font-family: var(--sans); font-size: 0.74rem; color: var(--ink-4); margin-bottom: 1rem; }
+  .ring-wrap { display: flex; align-items: center; gap: 1.2rem; }
+  .ring { position: relative; width: 92px; height: 92px; flex-shrink: 0; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .val {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: var(--sans); font-size: 1.15rem; font-weight: 700; color: var(--ink);
+  }
+  .ring .val small { font-size: 0.62rem; color: var(--ink-4); font-weight: 400; }
+  .ring-legend { font-family: var(--sans); font-size: 0.8rem; color: var(--ink-3); line-height: 1.9; }
+  .ring-legend b { color: var(--ink); }
+  .prog-actions { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  /* ============ STORY / PROSE READER ============ */
+  .reader-title { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .reader-meta { font-family: var(--sans); font-size: 0.76rem; color: var(--ink-4); margin-bottom: 1.1rem; }
+  .reader-body p { font-size: 1rem; line-height: 2.05; color: var(--ink-2); text-align: justify; margin-bottom: 0.8rem; text-indent: 2em; }
+  .reader-body p.noindent { text-indent: 0; }
+
+  /* ============ FOOTER ============ */
+  footer {
+    position: relative; z-index: 1;
+    text-align: center; padding: 2.2rem 1.5rem calc(2.2rem + env(safe-area-inset-bottom));
+    font-family: var(--sans); font-size: 0.76rem; color: var(--ink-4);
+    letter-spacing: 0.1em; border-top: 1px solid var(--line);
+  }
+  footer .sep { margin: 0 0.5rem; opacity: 0.5; }
+
+  /* back to top */
+  .to-top {
+    position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 90;
+    width: 42px; height: 42px; border-radius: 50%; border: none;
+    background: var(--accent); color: #fff; font-size: 1.15rem; cursor: pointer;
+    box-shadow: 0 4px 18px rgba(168,52,42,0.4);
+    opacity: 0; pointer-events: none; transform: translateY(10px);
+    transition: opacity 0.25s, transform 0.25s;
+    display: grid; place-items: center;
+  }
+  .to-top.on { opacity: 1; pointer-events: auto; transform: none; }
+  .to-top:active { transform: scale(0.94); }
+
+  /* skeleton shimmer for loading */
+  .skel { background: linear-gradient(100deg, var(--paper-2) 30%, #faf6ec 50%, var(--paper-2) 70%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: 6px; }
+  @keyframes sk { to { background-position: -200% 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   }
 </style>
 </head>
 <body>
 
-<!-- HERO -->
 <header class="hero">
-  <div class="hero-seal">诗<br>词</div>
-  <h1>中小学古诗词合集</h1>
-  <p class="subtitle">K12 · 部编版 · 经典名篇</p>
+  <div class="seal">墨<br>韵</div>
+  <h1>中小学古诗词<span class="dot">·</span>全集</h1>
+  <p class="hero-sub">K12 必背 · 部编版 · 深圳课标</p>
   <div class="hero-stats">
-    <div class="hero-stat">
-      <div class="hero-stat-num" id="totalCount">20</div>
-      <div class="hero-stat-label">首诗词</div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-num">10</div>
-      <div class="hero-stat-label">小学篇目</div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-num">10</div>
-      <div class="hero-stat-label">初中篇目</div>
-    </div>
+    <div class="stat"><b id="statPoems">—</b><span>诗词篇目</span></div>
+    <div class="stat"><b id="statProse">—</b><span>文言散文</span></div>
+    <div class="stat"><b id="statStory">—</b><span>故事典故</span></div>
+    <div class="stat"><b id="statExt">—</b><span>课外扩展</span></div>
   </div>
 </header>
 
-<!-- NAV -->
-<nav class="nav-bar">
-  <div class="nav-inner">
-    <button class="nav-btn active" onclick="filterSection('all')">全部 <span class="badge">20</span></button>
-    <button class="nav-btn" onclick="filterSection('primary')">小学 <span class="badge">10</span></button>
-    <button class="nav-btn" onclick="filterSection('middle')">初中 <span class="badge">10</span></button>
+<nav class="navbar">
+  <div class="nav-inner" id="navInner">
+    <button class="nav-btn active" data-panel="home">诗词总览<span class="n" id="navHomeN"></span></button>
+    <button class="nav-btn" data-panel="primary">小学诗词<span class="n" id="navPriN"></span></button>
+    <button class="nav-btn" data-panel="middle">初中诗词<span class="n" id="navMidN"></span></button>
+    <button class="nav-btn" data-panel="prose">散文集<span class="n" id="navProN"></span></button>
+    <button class="nav-btn" data-panel="story">故事会<span class="n" id="navStoN"></span></button>
+    <button class="nav-btn" data-panel="extra">课外扩展<span class="n" id="navExtN"></span></button>
+    <button class="nav-btn" data-panel="progress">进度</button>
+    <div class="nav-spacer"></div>
+    <div class="progress-pill" id="navProgress">已学 <b>0</b></div>
   </div>
 </nav>
 
-<!-- SEARCH -->
-<div class="search-wrap">
-  <div class="search-box">
-    <span class="search-icon">⌕</span>
-    <input type="text" id="searchInput" placeholder="搜索诗词标题、作者或诗句…" oninput="handleSearch(this.value)">
+<div class="toolbar" id="toolbar">
+  <div class="search">
+    <span class="ico">⌕</span>
+    <input type="text" id="searchInput" placeholder="搜索标题、作者、诗句、译文…" autocomplete="off">
+  </div>
+  <div class="chip-row" id="chipRow">
+    <button class="chip on" data-filter="all">全部</button>
+    <button class="chip" data-filter="primary">小学</button>
+    <button class="chip" data-filter="middle">初中</button>
   </div>
 </div>
 
-<!-- MAIN -->
-<main id="mainContent">
-
-  <!-- 小学部分 -->
-  <section class="section" id="primary-section">
-    <div class="section-header">
-      <div class="section-icon primary">小</div>
-      <div>
-        <div class="section-title">小学篇目</div>
-        <div class="section-subtitle">一年级至六年级 · 部编版必背</div>
-      </div>
-    </div>
-
-    <!-- 1 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="咏鹅骆宾王鹅鹅鹅">
-      <div class="poem-meta">
-        <span class="poem-title">咏鹅</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag primary">一年级</span>
-        <span class="poem-author">骆宾王</span>
-      </div>
-      <div class="poem-body">
-        <p>鹅，鹅，鹅，曲项向天歌。</p>
-        <p>白毛浮绿水，红掌拨清波。</p>
-      </div>
-    </div>
-
-    <!-- 2 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="静夜思李白床前明月光">
-      <div class="poem-meta">
-        <span class="poem-title">静夜思</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag primary">一年级</span>
-        <span class="poem-author">李白</span>
-      </div>
-      <div class="poem-body">
-        <p>床前明月光，疑是地上霜。</p>
-        <p>举头望明月，低头思故乡。</p>
-      </div>
-    </div>
-
-    <!-- 3 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="春晓孟浩然春眠不觉晓处处闻啼鸟">
-      <div class="poem-meta">
-        <span class="poem-title">春晓</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag primary">一年级</span>
-        <span class="poem-author">孟浩然</span>
-      </div>
-      <div class="poem-body">
-        <p>春眠不觉晓，处处闻啼鸟。</p>
-        <p>夜来风雨声，花落知多少。</p>
-      </div>
-    </div>
-
-    <!-- 4 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="悯农李绅锄禾日当午">
-      <div class="poem-meta">
-        <span class="poem-title">悯农（其二）</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag primary">一年级</span>
-        <span class="poem-author">李绅</span>
-      </div>
-      <div class="poem-body">
-        <p>锄禾日当午，汗滴禾下土。</p>
-        <p>谁知盘中餐，粒粒皆辛苦。</p>
-      </div>
-      <div class="poem-note"><strong>赏析：</strong> 以质朴的语言告诫人们珍惜粮食，体恤农民的辛劳。</div>
-    </div>
-
-    <!-- 5 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="小池杨万里泉眼无声惜细流">
-      <div class="poem-meta">
-        <span class="poem-title">小池</span>
-        <span class="poem-dynasty">宋</span>
-        <span class="poem-tag primary">二年级</span>
-        <span class="poem-author">杨万里</span>
-      </div>
-      <div class="poem-body">
-        <p>泉眼无声惜细流，树阴照水爱晴柔。</p>
-        <p>小荷才露尖尖角，早有蜻蜓立上头。</p>
-      </div>
-    </div>
-
-    <!-- 6 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="所见袁枚牧童骑黄牛">
-      <div class="poem-meta">
-        <span class="poem-title">所见</span>
-        <span class="poem-dynasty">清</span>
-        <span class="poem-tag primary">二年级</span>
-        <span class="poem-author">袁枚</span>
-      </div>
-      <div class="poem-body">
-        <p>牧童骑黄牛，歌声振林樾。</p>
-        <p>意欲捕鸣蝉，忽然闭口立。</p>
-      </div>
-    </div>
-
-    <!-- 7 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="敕勒歌北朝民歌天苍苍">
-      <div class="poem-meta">
-        <span class="poem-title">敕勒歌</span>
-        <span class="poem-dynasty">北朝民歌</span>
-        <span class="poem-tag primary">二年级</span>
-      </div>
-      <div class="poem-body">
-        <p>敕勒川，阴山下。</p>
-        <p>天似穹庐，笼盖四野。</p>
-        <p>天苍苍，野茫茫，风吹草低见牛羊。</p>
-      </div>
-    </div>
-
-    <!-- 8 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="望庐山瀑布李白日照香炉生紫烟">
-      <div class="poem-meta">
-        <span class="poem-title">望庐山瀑布</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag primary">二年级</span>
-        <span class="poem-author">李白</span>
-      </div>
-      <div class="poem-body">
-        <p>日照香炉生紫烟，遥看瀑布挂前川。</p>
-        <p>飞流直下三千尺，疑是银河落九天。</p>
-      </div>
-    </div>
-
-    <!-- 9 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="赠汪伦李白李白乘舟将欲行">
-      <div class="poem-meta">
-        <span class="poem-title">赠汪伦</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag primary">三年级</span>
-        <span class="poem-author">李白</span>
-      </div>
-      <div class="poem-body">
-        <p>李白乘舟将欲行，忽闻岸上踏歌声。</p>
-        <p>桃花潭水深千尺，不及汪伦送我情。</p>
-      </div>
-    </div>
-
-    <!-- 10 -->
-    <div class="poem-card primary-card" data-level="primary" data-search="村居高鼎草长莺飞二月天">
-      <div class="poem-meta">
-        <span class="poem-title">村居</span>
-        <span class="poem-dynasty">清</span>
-        <span class="poem-tag primary">三年级</span>
-        <span class="poem-author">高鼎</span>
-      </div>
-      <div class="poem-body">
-        <p>草长莺飞二月天，拂堤杨柳醉春烟。</p>
-        <p>儿童散学归来早，忙趁东风放纸鸢。</p>
-      </div>
-    </div>
+<main id="main">
+  <section class="panel on" id="panel-home">
+    <div id="homeBody"></div>
   </section>
+  <section class="panel" id="panel-primary"></section>
+  <section class="panel" id="panel-middle"></section>
+  <section class="panel" id="panel-prose"></section>
+  <section class="panel" id="panel-story"></section>
+  <section class="panel" id="panel-extra"></section>
+  <section class="panel" id="panel-progress"></section>
 
-  <!-- 初中部分 -->
-  <section class="section" id="middle-section">
-    <div class="section-header">
-      <div class="section-icon middle">初</div>
-      <div>
-        <div class="section-title">初中篇目</div>
-        <div class="section-subtitle">七年级至九年级 · 部编版必背</div>
-      </div>
-    </div>
-
-    <!-- 11 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="观沧海曹操东临碣石">
-      <div class="poem-meta">
-        <span class="poem-title">观沧海</span>
-        <span class="poem-dynasty">东汉</span>
-        <span class="poem-tag middle">七年级</span>
-        <span class="poem-author">曹操</span>
-      </div>
-      <div class="poem-body">
-        <p>东临碣石，以观沧海。</p>
-        <p>水何澹澹，山岛竦峙。</p>
-        <p>树木丛生，百草丰茂。</p>
-        <p>秋风萧瑟，洪波涌起。</p>
-        <p>日月之行，若出其中；</p>
-        <p>星汉灿烂，若出其里。</p>
-        <p>幸甚至哉，歌以咏志。</p>
-      </div>
-      <div class="poem-note"><strong>赏析：</strong> 曹操北征乌桓归来所作，借大海吞吐日月之景，抒发统一中原的壮志豪情。</div>
-    </div>
-
-    <!-- 12 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="次北固山下王湾客路青山外">
-      <div class="poem-meta">
-        <span class="poem-title">次北固山下</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag middle">七年级</span>
-        <span class="poem-author">王湾</span>
-      </div>
-      <div class="poem-body">
-        <p>客路青山外，行舟绿水前。</p>
-        <p>潮平两岸阔，风正一帆悬。</p>
-        <p>海日生残夜，江春入旧年。</p>
-        <p>乡书何处达？归雁洛阳边。</p>
-      </div>
-      <div class="poem-note"><strong>名句：</strong> 「海日生残夜，江春入旧年」蕴含新旧交替的自然哲理，被誉为盛唐气象的代表。</div>
-    </div>
-
-    <!-- 13 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="天净沙秋思马致远枯藤老树昏鸦">
-      <div class="poem-meta">
-        <span class="poem-title">天净沙·秋思</span>
-        <span class="poem-dynasty">元</span>
-        <span class="poem-tag middle">七年级</span>
-        <span class="poem-author">马致远</span>
-      </div>
-      <div class="poem-body">
-        <p>枯藤老树昏鸦，</p>
-        <p>小桥流水人家，</p>
-        <p>古道西风瘦马。</p>
-        <p>夕阳西下，断肠人在天涯。</p>
-      </div>
-      <div class="poem-note"><strong>赏析：</strong> 被誉为「秋思之祖」，以九种意象并列，勾勒出游子羁旅天涯的孤寂与愁绪。</div>
-    </div>
-
-    <!-- 14 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="钱塘湖春行白居易孤山寺北贾亭西">
-      <div class="poem-meta">
-        <span class="poem-title">钱塘湖春行</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag middle">七年级</span>
-        <span class="poem-author">白居易</span>
-      </div>
-      <div class="poem-body">
-        <p>孤山寺北贾亭西，水面初平云脚低。</p>
-        <p>几处早莺争暖树，谁家新燕啄春泥。</p>
-        <p>乱花渐欲迷人眼，浅草才能没马蹄。</p>
-        <p>最爱湖东行不足，绿杨阴里白沙堤。</p>
-      </div>
-    </div>
-
-    <!-- 15 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="夜雨寄北李商隐君问归期未有期">
-      <div class="poem-meta">
-        <span class="poem-title">夜雨寄北</span>
-        <span class="poem-dynasty">唐</span>
-        <span class="poem-tag middle">七年级</span>
-        <span class="poem-author">李商隐</span>
-      </div>
-      <div class="poem-body">
-        <p>君问归期未有期，巴山夜雨涨秋池。</p>
-        <p>何当共剪西窗烛，却话巴山夜雨时。</p>
-      </div>
-    </div>
-
-    <!-- 16 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="潼关怀古张养浩峰峦如聚">
-      <div class="poem-meta">
-        <span class="poem-title">山坡羊·潼关怀古</span>
-        <span class="poem-dynasty">元</span>
-        <span class="poem-tag middle">九年级</span>
-        <span class="poem-author">张养浩</span>
-      </div>
-      <div class="poem-body">
-        <p>峰峦如聚，波涛如怒，山河表里潼关路。</p>
-        <p>望西都，意踌躇。</p>
-        <p>伤心秦汉经行处，宫阙万间都做了土。</p>
-        <p>兴，百姓苦；亡，百姓苦。</p>
-      </div>
-      <div class="poem-note"><strong>主旨：</strong> 以潼关爱古，揭示历史沧桑，表达对百姓疾苦的深切同情，结尾两句振聋发聩。</div>
-    </div>
-
-    <!-- 17 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="己亥杂诗龚自珍浩荡离愁白日斜">
-      <div class="poem-meta">
-        <span class="poem-title">己亥杂诗（其五）</span>
-        <span class="poem-dynasty">清</span>
-        <span class="poem-tag middle">九年级</span>
-        <span class="poem-author">龚自珍</span>
-      </div>
-      <div class="poem-body">
-        <p>浩荡离愁白日斜，吟鞭东指即天涯。</p>
-        <p>落红不是无情物，化作春泥更护花。</p>
-      </div>
-      <div class="poem-note"><strong>名句：</strong> 「落红不是无情物，化作春泥更护花」以落花自喻，表达辞官仍愿为国效力的奉献精神。</div>
-    </div>
-
-    <!-- 18 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="登飞来峰王安石飞来山上千寻塔">
-      <div class="poem-meta">
-        <span class="poem-title">登飞来峰</span>
-        <span class="poem-dynasty">宋</span>
-        <span class="poem-tag middle">九年级</span>
-        <span class="poem-author">王安石</span>
-      </div>
-      <div class="poem-body">
-        <p>飞来山上千寻塔，闻说鸡鸣见日升。</p>
-        <p>不畏浮云遮望眼，自缘身在最高层。</p>
-      </div>
-    </div>
-
-    <!-- 19 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="水调歌头明月几时有苏轼中秋">
-      <div class="poem-meta">
-        <span class="poem-title">水调歌头·明月几时有</span>
-        <span class="poem-dynasty">宋</span>
-        <span class="poem-tag middle">九年级</span>
-        <span class="poem-author">苏轼</span>
-      </div>
-      <div class="poem-body">
-        <p>明月几时有？把酒问青天。</p>
-        <p>不知天上宫阙，今夕是何年。</p>
-        <p>我欲乘风归去，又恐琼楼玉宇，高处不胜寒。</p>
-        <p>起舞弄清影，何似在人间。</p>
-      </div>
-      <div class="poem-body" style="margin-top:-0.8rem;">
-        <p>转朱阁，低绮户，照无眠。</p>
-        <p>不应有恨，何事长向别时圆？</p>
-        <p>人有悲欢离合，月有阴晴圆缺，此事古难全。</p>
-        <p>但愿人长久，千里共婵娟。</p>
-      </div>
-      <div class="poem-note"><strong>名句：</strong> 「但愿人长久，千里共婵娟」是全词词眼，传达了对远方亲人的美好祝愿，豁达而深情。</div>
-    </div>
-
-    <!-- 20 -->
-    <div class="poem-card middle-card" data-level="middle" data-search="南乡子登京口北固亭有怀辛弃疾何处望神州">
-      <div class="poem-meta">
-        <span class="poem-title">南乡子·登京口北固亭有怀</span>
-        <span class="poem-dynasty">宋</span>
-        <span class="poem-tag middle">九年级</span>
-        <span class="poem-author">辛弃疾</span>
-      </div>
-      <div class="poem-body">
-        <p>何处望神州？满眼风光北固楼。</p>
-        <p>千古兴亡多少事？悠悠。不尽长江滚滚流。</p>
-        <p>年少万兜鍪，坐断东南战未休。</p>
-        <p>天下英雄谁敌手？曹刘。生子当如孙仲谋。</p>
-      </div>
-    </div>
-  </section>
-
-  <div class="no-result" id="noResult">未找到匹配的诗词</div>
+  <div class="empty" id="emptyState">
+    <div class="big">⊙</div>
+    <div>没有找到匹配的内容，换个关键词试试</div>
+  </div>
 </main>
 
 <footer>
-  中小学古诗词合集 · K12 Classical Poetry Collection
+  墨韵 · 中小学古诗词全集
+  <span class="sep">|</span>
+  供学习参考，内容以统编教材为准
 </footer>
 
-<button class="scroll-top" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="回到顶部">↑</button>
+<button class="to-top" id="toTop" aria-label="回到顶部">↑</button>
 
+<!-- DETAIL OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-head">
+      <div class="kicker" id="sheetKicker"></div>
+      <h2 id="sheetTitle"></h2>
+      <div class="by" id="sheetBy"></div>
+      <button class="sheet-close" id="sheetClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-foot">
+      <button class="btn nav-arrows" id="prevBtn"><span>‹</span> <span class="txt">上一篇</span></button>
+      <button class="btn primary done-btn grow" id="doneBtn">标记已学</button>
+      <button class="btn nav-arrows" id="nextBtn"><span class="txt">下一篇</span> <span>›</span></button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
 <script>
-  // Data
-  const totalPoems = 20;
+/* ============================================================
+   墨韵 · 应用逻辑
+   ============================================================ */
+(function () {
+  'use strict';
 
-  // Filter
-  function filterSection(level) {
-    const cards = document.querySelectorAll('.poem-card');
-    const sections = document.querySelectorAll('.section');
-    const buttons = document.querySelectorAll('.nav-btn');
+  const STORE_KEY = 'moyun_progress_v2';
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 
-    buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.closest('.nav-btn').classList.add('active');
+  // ---- data normalization ----
+  const D = window.POETRY_DATA || { poems: [], prose: [], stories: [], extras: [] };
+  const allItems = []
+    .concat((D.poems || []).map(x => ({ ...x, _kind: 'poem' })))
+    .concat((D.prose || []).map(x => ({ ...x, _kind: 'prose' })))
+    .concat((D.stories || []).map(x => ({ ...x, _kind: 'story' })))
+    .concat((D.extras || []).map(x => ({ ...x, _kind: 'extra' })));
 
-    let visibleCount = 0;
+  const byId = Object.fromEntries(allItems.map(x => [x.id, x]));
 
-    if (level === 'all') {
-      sections.forEach(s => s.style.display = '');
-      cards.forEach(card => {
-        card.style.display = '';
-        visibleCount++;
-      });
-    } else {
-      const targetSection = document.querySelector(`#${level}-section`);
-      sections.forEach(s => s.style.display = s.id === `${level}-section` ? '' : 'none');
-      cards.forEach(card => {
-        const show = card.dataset.level === level;
-        card.style.display = show ? '' : 'none';
-        if (show) visibleCount++;
-      });
-    }
+  // ---- progress store ----
+  let done = new Set();
+  try { const raw = localStorage.getItem(STORE_KEY); if (raw) done = new Set(JSON.parse(raw)); } catch (e) {}
+  function saveDone() { try { localStorage.setItem(STORE_KEY, JSON.stringify([...done])); } catch (e) {} }
 
-    document.getElementById('noResult').classList.toggle('visible', visibleCount === 0);
+  // ---- ruby pinyin parser ----
+  // markup: 字{pīn} — text outside braces is plain; {p} attaches to preceding char
+  function rubyHTML(text) {
+    if (!text) return '';
+    // Split into lines by \n
+    const lines = String(text).split('\n');
+    return lines.map(line => {
+      let out = '';
+      const re = /([\s\S]?)\{([^}]*)\}/g;
+      let last = 0, m;
+      while ((m = re.exec(line)) !== null) {
+        out += esc(line.slice(last, m.index));
+        const ch = m[1] || '';
+        const py = m[2];
+        if (py) out += `<ruby class="ruby">${esc(ch)}<rt>${esc(py)}</rt></ruby>`;
+        else out += esc(ch);
+        last = m.index + m[0].length;
+      }
+      out += esc(line.slice(last));
+      return out;
+    }).join('\n');
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function plain(text) { return String(text || '').replace(/\{([^}]*)\}/g, ''); }
+
+  // ---- icon helpers ----
+  const KIND_META = {
+    poem: { label: '诗词', cls: '' },
+    prose: { label: '散文', cls: 'j' },
+    story: { label: '故事', cls: 'j' },
+    extra: { label: '扩展', cls: 'v' },
+  };
+
+  // ---- count helpers ----
+  const primaryPoems = allItems.filter(x => x._kind === 'poem' && x.level === 'primary');
+  const middlePoems = allItems.filter(x => x._kind === 'poem' && x.level === 'middle');
+
+  // ============================================================
+  //  RENDER: CARD
+  // ============================================================
+  function cardHTML(item) {
+    const meta = KIND_META[item._kind] || KIND_META.poem;
+    const isDone = done.has(item.id);
+    const excerpt = plain(item.excerpt || item.original || item.pinyin || item.summary || item.content || '').replace(/\s+/g, ' ').trim();
+    const short = excerpt.length > 46 ? excerpt.slice(0, 46) + '…' : excerpt;
+    const dyn = item.dynasty ? `<span class="dyn">${esc(item.dynasty)}</span>` : '';
+    const grade = item.grade ? `<span class="grade-badge">${esc(item.grade)}</span>` : '';
+    const author = item.author ? `<span class="card-author">${esc(item.author)}</span>` : '';
+    const tag = item.tag ? `<span class="tag2">${esc(item.tag)}</span>` : '';
+    const doneMark = isDone ? `<span class="done-mark"><span class="dotg"></span>已学</span>` : '';
+    return `
+      <article class="card ${meta.cls} ${isDone ? 'is-done' : ''}" tabindex="0" role="button"
+        data-id="${esc(item.id)}" aria-label="查看：${esc(item.title)}">
+        <div class="card-top">
+          <span class="card-title">${esc(item.title)}</span>
+          ${dyn}${grade}
+          ${author}
+        </div>
+        <div class="card-excerpt">${esc(short || '（点击查看）')}</div>
+        <div class="card-foot">
+          ${tag}
+          ${doneMark}
+        </div>
+      </article>`;
   }
 
-  // Search
-  function handleSearch(query) {
-    const q = query.trim().toLowerCase();
-    const cards = document.querySelectorAll('.poem-card');
-    const sections = document.querySelectorAll('.section');
-    const noResult = document.getElementById('noResult');
+  function gridHTML(list) {
+    if (!list.length) return '';
+    return `<div class="grid-wrap"><div class="swipe-hint">左右滑动 →</div><div class="grid">${list.map(cardHTML).join('')}</div></div>`;
+  }
 
-    // Reset nav
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.nav-btn').classList.add('active');
-    sections.forEach(s => s.style.display = '');
+  // ============================================================
+  //  RENDER: DETAIL SHEET
+  // ============================================================
+  let currentId = null;
+  let currentList = [];
 
-    let count = 0;
-    cards.forEach(card => {
-      const text = card.dataset.search.toLowerCase();
-      const title = card.querySelector('.poem-title').textContent.toLowerCase();
-      const body = card.querySelector('.poem-body').textContent.toLowerCase();
-      const match = !q || text.includes(q) || title.includes(q) || body.includes(q);
-      card.style.display = match ? '' : 'none';
-      if (match) count++;
+  function detailHTML(item) {
+    const parts = [];
+    const isPoem = item._kind === 'poem' || item._kind === 'extra';
+    // 1) 正文
+    if (isPoem || item.pinyin) {
+      const body = item.pinyin || item.original || '';
+      if (body) {
+        parts.push(`<div class="poem-lines">${rubyHTML(body).split('\n').map(l => `<div class="ln">${l || '&nbsp;'}</div>`).join('')}</div>`);
+      }
+    } else if (item.content) {
+      const body = String(item.content).split('\n').map(l => `<p>${rubyHTML(l)}</p>`).join('');
+      parts.push(`<div class="block"><div class="label">${item._kind === 'story' ? '故事' : '正文'}</div><div class="reader-body">${body}</div></div>`);
+    }
+    // 2) 译文
+    if (item.translation) {
+      parts.push(`<div class="block"><div class="label">译文</div><p>${plainLines(item.translation).join('</p><p>')}</p></div>`);
+    }
+    // 3) 寓意（故事）
+    if (item.meaning && item._kind === 'story') {
+      parts.push(`<div class="block j"><div class="label">寓意</div><p>${plainLines(item.meaning).join('</p><p>')}</p></div>`);
+    }
+    // 4) 赏析
+    if (item.analysis) {
+      parts.push(`<div class="block"><div class="label">赏析</div>${plainLines(item.analysis).map(p => `<p>${p}</p>`).join('')}</div>`);
+    }
+    // 5) 考点
+    if (item.points && item.points.length) {
+      parts.push(`<div class="block"><div class="label">考点</div><ul class="points">${item.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`);
+    }
+    if (item.tags && item.tags.length) {
+      parts.push(`<div class="block"><div class="label">标签</div><div class="chip-row">${item.tags.map(t => `<span class="tag2">${esc(t)}</span>`).join(' ')}</div></div>`);
+    }
+    return parts.join('');
+  }
+  function plainLines(text) {
+    return String(text || '').split('\n').map(s => esc(s.trim())).filter(Boolean);
+  }
+
+  function openDetail(id) {
+    const item = byId[id];
+    if (!item) return;
+    currentId = id;
+    // build navigation list scoped by kind/level
+    currentList = currentPanelList();
+    const idx = currentList.findIndex(x => x.id === id);
+    if (idx < 0) currentList = [item];
+
+    const meta = KIND_META[item._kind] || KIND_META.poem;
+    const kicker = [meta.label];
+    if (item.grade) kicker.push(item.grade);
+    if (item.tag) kicker.push(item.tag);
+    $('#sheetKicker').textContent = kicker.join(' · ');
+    $('#sheetTitle').textContent = item.title || '';
+    $('#sheetBy').textContent = item.author ? `${item.dynasty ? item.dynasty + ' · ' : ''}${item.author}` : (item.dynasty || '');
+    $('#sheetBody').innerHTML = detailHTML(item);
+
+    const isDone = done.has(id);
+    const btn = $('#doneBtn');
+    btn.textContent = isDone ? '✓ 已学会' : '标记已学';
+    btn.classList.toggle('done', isDone);
+
+    const i = currentList.findIndex(x => x.id === id);
+    $('#prevBtn').disabled = i <= 0;
+    $('#nextBtn').disabled = i < 0 || i >= currentList.length - 1;
+    $('#prevBtn').style.opacity = i <= 0 ? 0.35 : 1;
+    $('#nextBtn').style.opacity = (i < 0 || i >= currentList.length - 1) ? 0.35 : 1;
+
+    $('#overlay').classList.add('on');
+    document.body.style.overflow = 'hidden';
+    $('#sheetBody').scrollTop = 0;
+  }
+
+  function closeDetail() {
+    $('#overlay').classList.remove('on');
+    document.body.style.overflow = '';
+    currentId = null;
+  }
+
+  function toggleDone(id) {
+    if (done.has(id)) { done.delete(id); }
+    else { done.add(id); }
+    saveDone();
+    refreshCounts();
+    // update button
+    const isDone = done.has(id);
+    const btn = $('#doneBtn');
+    btn.textContent = isDone ? '✓ 已学会' : '标记已学';
+    btn.classList.toggle('done', isDone);
+    // update card state in DOM
+    const card = document.querySelector(`.card[data-id="${cssEsc(id)}"]`);
+    if (card) {
+      card.classList.toggle('is-done', isDone);
+      const foot = card.querySelector('.card-foot');
+      let mark = foot.querySelector('.done-mark');
+      if (isDone && !mark) {
+        mark = document.createElement('span');
+        mark.className = 'done-mark';
+        mark.innerHTML = '<span class="dotg"></span>已学';
+        foot.appendChild(mark);
+      } else if (!isDone && mark) { mark.remove(); }
+    }
+  }
+  function cssEsc(s) { return String(s).replace(/["\\]/g, '\\$&'); }
+
+  function navigate(dir) {
+    const i = currentList.findIndex(x => x.id === currentId);
+    const j = i + dir;
+    if (j >= 0 && j < currentList.length) openDetail(currentList[j].id);
+  }
+
+  function currentPanelList() {
+    const active = $('.nav-btn.active');
+    const panel = active ? active.dataset.panel : 'home';
+    if (panel === 'home') return primaryPoems.concat(middlePoems).filter(matchesFilter);
+    if (panel === 'primary') return primaryPoems.filter(matchesFilter);
+    if (panel === 'middle') return middlePoems.filter(matchesFilter);
+    if (panel === 'prose') return (D.prose || []).map(x => ({ ...x, _kind: 'prose' }));
+    if (panel === 'story') return (D.stories || []).map(x => ({ ...x, _kind: 'story' }));
+    if (panel === 'extra') return (D.extras || []).map(x => ({ ...x, _kind: 'extra' }));
+    return allItems;
+  }
+
+  // ============================================================
+  //  FILTER / SEARCH STATE
+  // ============================================================
+  let filterLevel = 'all';
+  let query = '';
+
+  function matchesFilter(item) {
+    if (item._kind !== 'poem' && item._kind !== 'extra') {
+      // prose/story not filtered by level chips
+      return matchQuery(item);
+    }
+    if (filterLevel !== 'all' && item.level !== filterLevel) return false;
+    return matchQuery(item);
+  }
+  function matchQuery(item) {
+    if (!query) return true;
+    const hay = [
+      item.title, item.author, item.dynasty, item.grade, item.tag,
+      plain(item.original), plain(item.pinyin), plain(item.translation),
+      plain(item.analysis), plain(item.excerpt), plain(item.summary),
+      plain(item.content), plain(item.meaning), (item.tags || []).join(' ')
+    ].join(' ').toLowerCase();
+    return hay.includes(query);
+  }
+
+  // ============================================================
+  //  RENDER PANELS
+  // ============================================================
+  function renderHome() {
+    const host = $('#homeBody');
+    const pri = primaryPoems.filter(matchesFilter);
+    const mid = middlePoems.filter(matchesFilter);
+    let html = '';
+    if (pri.length) {
+      html += secHead('小', '', '小学篇目', '一至六年级 · 部编版必背', pri.length);
+      html += gridHTML(pri);
+    }
+    if (mid.length) {
+      html += secHead('初', 'v', '初中篇目', '七至九年级 · 中考必考', mid.length);
+      html += gridHTML(mid);
+    }
+    if (!pri.length && !mid.length) html = '';
+    host.innerHTML = html;
+    updateEmpty();
+  }
+
+  function secHead(glyph, cls, title, sub, count) {
+    return `<div class="sec-head ${cls}">
+      <div class="glyph">${glyph}</div>
+      <div><h2>${title}</h2><p>${sub}</p></div>
+      <div class="cnt">${count} 篇</div>
+    </div>`;
+  }
+
+  function renderListPanel(panelId, list, options) {
+    const host = $('#panel-' + panelId);
+    const filtered = list.filter(matchesFilter);
+    if (!filtered.length) { host.innerHTML = ''; return; }
+    host.innerHTML = secHead(options.glyph, options.cls || '', options.title, options.sub, filtered.length) + gridHTML(filtered);
+  }
+
+  function renderProse() {
+    const list = (D.prose || []).map(x => ({ ...x, _kind: 'prose' })).filter(matchesFilter);
+    const host = $('#panel-prose');
+    if (!list.length) { host.innerHTML = ''; return; }
+    host.innerHTML = secHead('文', 'j', '散文集', '文言名篇 · 经典散文', list.length) + gridHTML(list);
+  }
+  function renderStory() {
+    const list = (D.stories || []).map(x => ({ ...x, _kind: 'story' })).filter(matchesFilter);
+    const host = $('#panel-story');
+    if (!list.length) { host.innerHTML = ''; return; }
+    host.innerHTML = secHead('事', 'j', '故事会', '典故故事 · 名人轶事', list.length) + gridHTML(list);
+  }
+  function renderExtra() {
+    const list = (D.extras || []).map(x => ({ ...x, _kind: 'extra' })).filter(matchesFilter);
+    const host = $('#panel-extra');
+    if (!list.length) { host.innerHTML = ''; return; }
+    host.innerHTML = secHead('拓', 'v', '课外扩展', '名句名篇 · 拓展阅读', list.length) + gridHTML(list);
+  }
+
+  function renderProgress() {
+    const host = $('#panel-progress');
+    const total = allItems.length;
+    const doneCount = allItems.filter(x => done.has(x.id)).length;
+    const pct = total ? Math.round(doneCount / total * 100) : 0;
+
+    const byKind = {};
+    allItems.forEach(x => {
+      byKind[x._kind] = byKind[x._kind] || { total: 0, done: 0 };
+      byKind[x._kind].total++;
+      if (done.has(x.id)) byKind[x._kind].done++;
     });
 
-    noResult.classList.toggle('visible', count === 0);
+    const ring = (p, size) => {
+      const r = (size - 10) / 2;
+      const c = 2 * Math.PI * r;
+      return `<svg width="${size}" height="${size}">
+        <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(60,45,20,0.08)" stroke-width="8"/>
+        <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--jade)" stroke-width="8"
+          stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p/100)}"/>
+      </svg>`;
+    };
+
+    const rows = [
+      ['poem', '诗词'], ['prose', '散文'], ['story', '故事'], ['extra', '扩展']
+    ].map(([k, label]) => {
+      const o = byKind[k] || { total: 0, done: 0 };
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.35rem 0;border-bottom:1px dashed var(--line);">
+        <span>${label}</span>
+        <span style="font-family:var(--sans);font-size:0.82rem;"><b style="color:var(--jade)">${o.done}</b> / ${o.total}</span>
+      </div>`;
+    }).join('');
+
+    host.innerHTML = `
+      <div class="sec-head j"><div class="glyph">进</div><div><h2>学习进度</h2><p>记录足迹 · 温故知新</p></div></div>
+      <div class="prog-wrap">
+        <div class="prog-card">
+          <h3>总进度</h3>
+          <div class="sub">已学会 ${doneCount} / ${total} 篇</div>
+          <div class="ring-wrap">
+            <div class="ring">${ring(pct, 92)}<div class="val">${pct}<small>%</small></div></div>
+            <div class="ring-legend">
+              已完成 <b>${doneCount}</b> 篇<br>
+              待学习 <b>${total - doneCount}</b> 篇
+            </div>
+          </div>
+          <div class="prog-actions">
+            <button class="btn" id="resetProgress">清空进度</button>
+          </div>
+        </div>
+        <div class="prog-card">
+          <h3>分类统计</h3>
+          <div class="sub">各板块完成情况</div>
+          <div style="font-family:var(--sans);font-size:0.86rem;color:var(--ink-2);">${rows}</div>
+        </div>
+      </div>`;
+
+    const rb = $('#resetProgress');
+    if (rb) rb.onclick = () => {
+      if (confirm('确定清空所有学习进度吗？')) {
+        done.clear(); saveDone(); refreshCounts(); renderProgress();
+        renderAll();
+      }
+    };
   }
 
-  // Scroll to top button
-  const scrollBtn = document.getElementById('scrollTopBtn');
-  window.addEventListener('scroll', () => {
-    scrollBtn.classList.toggle('visible', window.scrollY > 400);
-  });
+  // ============================================================
+  //  REFRESH / ROUTING
+  // ============================================================
+  function refreshCounts() {
+    const doneCount = allItems.filter(x => done.has(x.id)).length;
+    $('#navProgress').innerHTML = `已学 <b>${doneCount}</b>`;
+    $('#navHomeN').textContent = allItems.length;
+    $('#navPriN').textContent = primaryPoems.length;
+    $('#navMidN').textContent = middlePoems.length;
+    $('#navProN').textContent = (D.prose || []).length;
+    $('#navStoN').textContent = (D.stories || []).length;
+    $('#navExtN').textContent = (D.extras || []).length;
+    $('#statPoems').textContent = (D.poems || []).length;
+    $('#statProse').textContent = (D.prose || []).length;
+    $('#statStory').textContent = (D.stories || []).length;
+    $('#statExt').textContent = (D.extras || []).length;
+  }
 
-  // Animate on scroll
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = '';
+  function renderAll() {
+    renderHome();
+    renderListPanel('primary', primaryPoems, { glyph: '小', cls: '', title: '小学篇目', sub: '一至六年级 · 部编版必背' });
+    renderListPanel('middle', middlePoems, { glyph: '初', cls: 'v', title: '初中篇目', sub: '七至九年级 · 中考必考' });
+    renderProse();
+    renderStory();
+    renderExtra();
+    renderProgress();
+    updateEmpty();
+  }
+
+  function updateEmpty() {
+    const active = $('.nav-btn.active').dataset.panel;
+    let count = 0;
+    if (active === 'home') count = primaryPoems.filter(matchesFilter).length + middlePoems.filter(matchesFilter).length;
+    else if (active === 'primary') count = primaryPoems.filter(matchesFilter).length;
+    else if (active === 'middle') count = middlePoems.filter(matchesFilter).length;
+    else if (active === 'prose') count = (D.prose || []).filter(matchesFilter).length;
+    else if (active === 'story') count = (D.stories || []).filter(matchesFilter).length;
+    else if (active === 'extra') count = (D.extras || []).filter(matchesFilter).length;
+    else count = 1; // progress always visible
+    $('#emptyState').classList.toggle('on', count === 0);
+  }
+
+  function switchPanel(name) {
+    $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === name));
+    $$('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-' + name));
+    // toolbar only for content panels
+    const showToolbar = !['progress'].includes(name);
+    $('#toolbar').style.display = showToolbar ? '' : 'none';
+    // chips only meaningful in home/primary/middle/extra
+    const showChips = ['home', 'primary', 'middle', 'extra'].includes(name);
+    $('#chipRow').style.display = showChips ? '' : 'none';
+    updateEmpty();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ============================================================
+  //  EVENTS
+  // ============================================================
+  function bind() {
+    // nav
+    $$('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchPanel(btn.dataset.panel));
+    });
+
+    // chips
+    $$('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        $$('.chip').forEach(c => c.classList.remove('on'));
+        chip.classList.add('on');
+        filterLevel = chip.dataset.filter;
+        renderAll();
+        updateEmpty();
+      });
+    });
+
+    // search
+    let t = null;
+    $('#searchInput').addEventListener('input', e => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        query = e.target.value.trim().toLowerCase();
+        renderAll();
+        updateEmpty();
+      }, 140);
+    });
+
+    // card click (delegated)
+    document.addEventListener('click', e => {
+      const card = e.target.closest('.card');
+      if (card) { openDetail(card.dataset.id); return; }
+    });
+    // keyboard on cards
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const card = e.target.closest('.card');
+        if (card) { e.preventDefault(); openDetail(card.dataset.id); }
+      }
+      if (e.key === 'Escape' && $('#overlay').classList.contains('on')) closeDetail();
+      if ($('#overlay').classList.contains('on')) {
+        if (e.key === 'ArrowLeft') navigate(-1);
+        if (e.key === 'ArrowRight') navigate(1);
       }
     });
-  }, { threshold: 0.1 });
 
-  document.querySelectorAll('.poem-card').forEach(card => observer.observe(card));
+    // sheet controls
+    $('#sheetClose').addEventListener('click', closeDetail);
+    $('#overlay').addEventListener('click', e => { if (e.target === $('#overlay')) closeDetail(); });
+    $('#prevBtn').addEventListener('click', () => navigate(-1));
+    $('#nextBtn').addEventListener('click', () => navigate(1));
+    $('#doneBtn').addEventListener('click', () => { if (currentId) toggleDone(currentId); });
+
+    // back to top
+    const top = $('#toTop');
+    window.addEventListener('scroll', () => top.classList.toggle('on', window.scrollY > 500), { passive: true });
+    top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  }
+
+  // ============================================================
+  //  INIT
+  // ============================================================
+  function init() {
+    if (!allItems.length) {
+      $('#homeBody').innerHTML = `<div class="empty on"><div class="big">⚠</div><div>数据加载失败：请确认 data.js 已正确引入</div></div>`;
+      return;
+    }
+    refreshCounts();
+    renderAll();
+    bind();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 </script>
 </body>
 </html>
