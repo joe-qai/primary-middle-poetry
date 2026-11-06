@@ -940,16 +940,18 @@
   function audioEntry(id) {
     return (audioIndex && audioIndex.items && audioIndex.items[id]) || null;
   }
-  function loadCues(id) {
-    if (audioCuesId === id) return;
-    audioCuesId = id;
+  function loadCues(id, ver) {
+    const key = id + '|' + (ver || '');
+    if (audioCuesId === key) return;
+    audioCuesId = key;
     audioCues = [];
     audioHdr = 0;
     audioCueIdx = -1;
-    fetch(`${AUDIO_BASE}${id}.json`, { cache: 'force-cache' })
+    const q = ver ? ('?v=' + encodeURIComponent(ver)) : '';
+    fetch(`${AUDIO_BASE}${id}.json${q}`, { cache: 'force-cache' })
       .then(r => (r && r.ok ? r.json() : null))
       .then(j => {
-        if (audioCuesId !== id || !j || !Array.isArray(j.cues)) return;
+        if (audioCuesId !== key || !j || !Array.isArray(j.cues)) return;
         audioCues = j.cues;
         audioHdr = j.hdr || 0;
       })
@@ -1051,8 +1053,10 @@
     audioHl = collectHighlightEls();
     clearHighlight();
     audioCuesId = null;
-    loadCues(item.id);
-    audioEl.src = AUDIO_BASE + (entry.mp3 || (item.id + '.mp3'));
+    const ver = entry.v || '';
+    loadCues(item.id, ver);
+    const file = entry.mp3 || (item.id + '.mp3');
+    audioEl.src = AUDIO_BASE + file + (ver ? ('?v=' + encodeURIComponent(ver)) : '');
     audioEl.playbackRate = 1;
     speechActive = true;
     speechPaused = false;

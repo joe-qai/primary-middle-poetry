@@ -81,6 +81,8 @@ python tools/gen_audio.py --ids p001 --force     # 覆盖重生成
 
 - 音色：`zh-CN-YunjianNeural`（云健，浑厚男声），语速 `-10%`
 - 输出 MP3 为 24kHz / 48kbps 单声道，逐句时间轴来自 edge-tts 的 `SentenceBoundary`
+- 「而」在长句连读中容易被引擎吞掉：前文连续 6 字以上时脚本会自动补一个停顿逗号，**只影响音频，不改页面文本**
+- 音频地址带内容版本号 `?v=<hash>`，重新生成后不会被浏览器或 CDN 缓存住
 - 前端音频地址统一走 `index.html` 里的常量 `AUDIO_BASE`，将来迁 CDN 只改这一行
 - 尚未生成的篇目会自动使用 Web Speech API，因此不会出现「点击无反应」
 - 音频通过 `fetch` 读取清单，**直接双击 `index.html`（file://）时朗读会退回系统语音**，需要 HTTP 服务才能启用音频

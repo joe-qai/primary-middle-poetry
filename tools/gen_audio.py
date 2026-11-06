@@ -18,8 +18,8 @@
 
 import argparse
 import asyncio
+import hashlib
 import json
-import os
 import re
 import sys
 import time
@@ -127,6 +127,26 @@ def dynasty_text(d):
     return t + "代" if t in DYN_SINGLE else t
 
 
+# 「而」在连读中容易被语音引擎吞掉：前文连续 6 字以上时补一个逗号，强制读出。
+# 只作用于送入 TTS 的文本，页面展示与时间轴切分不受影响。
+PAUSE_CHARS = set("，。！？；：、,.!?;:\n…—～「」『』“”‘’()（）《》〈〉【】[] \t")
+
+
+def pause_before_er(s):
+    out = []
+    run = 0
+    for ch in s:
+        if ch == "而" and run >= 6:
+            out.append("，")
+            run = 0
+        out.append(ch)
+        if ch in PAUSE_CHARS:
+            run = 0
+        else:
+            run += 1
+    return "".join(out)
+
+
 def split_sentences(body):
     """与前端 splitRawSentences 完全一致：按行、按句末标点切分。"""
     out = []
@@ -147,7 +167,7 @@ def compose(item):
     """拼出朗读文本，返回 (text, 头部行数, 正文句数)。"""
     title = tts_clean(item.get("title"))
     who = "，".join(x for x in (dynasty_text(item.get("dynasty")), tts_clean(item.get("author"))) if x)
-    body = tts_clean(body_text(item))
+    body = pause_before_er(tts_clean(body_text(item)))
     header = [x for x in (title, who) if x]
     text = "\n".join(header + ([body] if body else []))
     return text, len(header), len(split_sentences(body))
@@ -187,6 +207,7 @@ async def synth(item, voice, rate, out_mp3, retries=3):
                 "dur": dur,
                 "hdr": hdr,
                 "bodyCues": body_count,
+                "v": hashlib.md5(bytes(audio)).hexdigest()[:8],
                 "cues": cues,
             }
             return meta
@@ -246,6 +267,7 @@ async def run(args):
                     "dur": meta["dur"],
                     "hdr": meta["hdr"],
                     "bodyCues": meta["bodyCues"],
+                    "v": meta["v"],
                 }
                 done["ok"] += 1
                 warn = ""
