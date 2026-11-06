@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>墨韵 · 中小学古诗词全集</title>
-<meta name="description" content="K12 必背古诗词、文言文、散文、故事与课外扩展，含拼音、译文、赏析与考点。">
+<meta name="description" content="K12 必背古诗词、文言文、散文、故事与课外篇，含拼音、译文、赏析与考点。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -575,7 +575,7 @@
     <div class="stat"><b id="statPoems">—</b><span>诗词篇目</span></div>
     <div class="stat"><b id="statProse">—</b><span>文言散文</span></div>
     <div class="stat"><b id="statStory">—</b><span>故事典故</span></div>
-    <div class="stat"><b id="statExt">—</b><span>课外扩展</span></div>
+    <div class="stat"><b id="statExt">—</b><span>课外篇</span></div>
     <div class="stat"><b id="statCls">—</b><span>名篇馆</span></div>
   </div>
 </header>
@@ -587,7 +587,7 @@
     <button class="nav-btn" data-panel="middle">初中诗词<span class="n" id="navMidN"></span></button>
     <button class="nav-btn" data-panel="prose">散文集<span class="n" id="navProN"></span></button>
     <button class="nav-btn" data-panel="story">故事会<span class="n" id="navStoN"></span></button>
-    <button class="nav-btn" data-panel="extra">课外扩展<span class="n" id="navExtN"></span></button>
+    <button class="nav-btn" data-panel="extra">课外篇<span class="n" id="navExtN"></span></button>
     <button class="nav-btn" data-panel="classics">名篇馆<span class="n" id="navClsN"></span></button>
     <button class="nav-btn" data-panel="progress">进度</button>
     <div class="nav-spacer"></div>
@@ -734,7 +734,7 @@
     poem: { label: '诗词', cls: '' },
     prose: { label: '散文', cls: 'j' },
     story: { label: '故事', cls: 'j' },
-    extra: { label: '扩展', cls: 'v' },
+    extra: { label: '课外', cls: 'v' },
     classics: { label: '名篇', cls: 'k' },
   };
 
@@ -784,19 +784,19 @@
 
   function detailHTML(item) {
     const parts = [];
-    const isPoem = item._kind === 'poem' || item._kind === 'extra';
+    const prose = isProseLayout(item);
+    const body = bodyText(item);
     // 1) 正文
-    if (isPoem || item.pinyin) {
-      const body = item.pinyin || item.original || '';
-      if (body) {
+    if (body) {
+      if (prose) {
+        const html = String(body).split('\n').map(l => `<p>${contentLineHTML(item, l)}</p>`).join('');
+        parts.push(`<div class="block"><div class="label">${item._kind === 'story' ? '故事' : '正文'}</div><div class="reader-body">${html}</div></div>`);
+      } else {
         const rawLines = String(body).split('\n');
         const linesHTML = rubyHTML(body).split('\n').map((l, i) =>
           `<div class="ln${isKeyLine(item, rawLines[i]) ? ' key-line' : ''}">${l || '&nbsp;'}</div>`).join('');
         parts.push(`<div class="poem-lines">${linesHTML}</div>`);
       }
-    } else if (item.content) {
-      const body = String(item.content).split('\n').map(l => `<p>${contentLineHTML(item, l)}</p>`).join('');
-      parts.push(`<div class="block"><div class="label">${item._kind === 'story' ? '故事' : '正文'}</div><div class="reader-body">${body}</div></div>`);
     }
     // 2) 译文
     if (item.translation) {
@@ -821,6 +821,16 @@
   }
   function plainLines(text) {
     return String(text || '').split('\n').map(s => esc(s.trim())).filter(Boolean);
+  }
+  // 课外篇中「辞赋/散文」类，正文比注音片段长，按散文全文展示
+  function isProseLayout(item) {
+    if (item._kind === 'story' || item._kind === 'prose' || item._kind === 'classics') return true;
+    if (item._kind === 'extra') return !!item.content && item.content.length > (item.pinyin || '').length;
+    return false;
+  }
+  function bodyText(item) {
+    if (isProseLayout(item)) return item.content || item.pinyin || item.original || '';
+    return item.pinyin || item.original || item.content || '';
   }
   // 按句读切分正文，命中重点句时只加粗该句
   function stripAnnMap(raw) {
@@ -874,41 +884,90 @@
   //  READ ALOUD（浏览器语音合成）
   // ============================================================
   const synth = window.speechSynthesis || null;
-  let speechChunks = [], speechIndex = 0, speechToken = 0;
-  let speechActive = false, speechPaused = false, zhVoice = null;
+  let speechQueue = [], speechIndex = 0, speechToken = 0, speechTimer = null;
+  let speechActive = false, speechPaused = false, speechVoice = null, speechMale = false;
 
+  // 标点停顿（毫秒）：句末长停、分号次之、逗号短停，顿号最轻
+  const SPEECH_PAUSE = { '。': 440, '！': 520, '？': 500, '；': 320, '：': 250, '，': 175, '、': 90, '—': 150, '…': 260 };
+  // 句末标点决定语气：感叹→提气，疑问→上扬，逗号→收着一点
+  const SPEECH_MOOD = { '。': 'decl', '！': 'excl', '？': 'ask', '；': 'mid', '：': 'mid', '，': 'mid', '、': 'mid', '—': 'mid', '…': 'mid' };
+  // 单字朝代补成「唐代」「宋代」，读起来更像口语
+  const DYN_SINGLE = /^[唐宋元明清汉秦晋隋魏]$/;
+
+  // 去掉书名号等符号，避免语音引擎把符号念成杂音
+  function speechClean(s) {
+    return String(s == null ? '' : s)
+      .replace(/《([^》]*)》/g, '，$1')
+      .replace(/[《》〈〉「」『』“”‘’()（）\[\]【】]/g, '')
+      .replace(/·/g, '，')
+      .replace(/[，、；：\s]+/g, '，')
+      .replace(/^[，。；：]+|[，。；：]+$/g, '')
+      .trim();
+  }
+  function speechDynasty(d) {
+    const t = speechClean(d);
+    if (!t) return '';
+    return DYN_SINGLE.test(t) ? t + '代' : t;
+  }
+  const MALE_VOICE_RE = /(yunxi|yunjian|yunyang|yunfeng|yunhao|yunjie|yunze|yunye|kangkang|liang|male|男)/i;
+  const FEMALE_VOICE_RE = /(xiaoxiao|xiaoyi|xiaomo|xiaoqiu|xiaoxuan|xiaohan|xiaoshuang|yunxia|huihui|yaoyao|female|女)/i;
+
+  // 优先选中文男声，其次任意中文语音；找不到男声时用较低音高近似
   function pickZhVoice() {
     if (!synth) return null;
-    if (zhVoice) return zhVoice;
+    if (speechVoice) return speechVoice;
     const list = synth.getVoices() || [];
-    zhVoice = list.find(v => /^zh/i.test(v.lang || '')) || null;
-    return zhVoice;
+    const zh = list.filter(v => /^zh/i.test(v.lang || ''));
+    if (!zh.length) return null;
+    const males = zh.filter(v => MALE_VOICE_RE.test(v.name || '') && !FEMALE_VOICE_RE.test(v.name || ''));
+    if (males.length) {
+      speechMale = true;
+      speechVoice = males.find(v => /natural|online|neural/i.test(v.name || '')) || males[0];
+      return speechVoice;
+    }
+    speechMale = false;
+    speechVoice = zh.find(v => /zh[-_]CN/i.test(v.lang || '')) || zh[0];
+    return speechVoice;
   }
   if (synth && typeof synth.addEventListener === 'function') {
-    synth.addEventListener('voiceschanged', () => { zhVoice = null; pickZhVoice(); });
+    synth.addEventListener('voiceschanged', () => { speechVoice = null; pickZhVoice(); });
   }
 
-  // 按句切分，避免部分浏览器对超长语句截断
+  // 按标点断句，逐句送入语音引擎，句间按标点留白，避免整段平铺直叙
   function splitSpeech(text) {
     const clean = String(text || '').replace(/\r/g, '').trim();
     if (!clean) return [];
-    const raw = clean.split(/\n+/);
-    const pieces = [];
-    for (const para of raw) {
-      const sents = para.match(/[^。！？；!?;]*[。！？；!?;]?/g) || [];
-      for (const s of sents) {
-        const t = s.trim();
-        if (t) pieces.push(t);
-      }
-    }
+    const lines = clean.split(/\n+/);
     const out = [];
-    let buf = '';
-    for (const p of pieces) {
-      if ((buf + p).length <= 90) { buf += p; }
-      else { if (buf) out.push(buf); buf = p; }
+    lines.forEach((line, li) => {
+      let buf = '';
+      for (const ch of line) {
+        // 「而」常被语音引擎一带而过：在分句较长时单独起句，确保读出并形成自然断句
+        if (ch === '而' && buf.trim().length >= 4) {
+          out.push({ text: buf.trim(), pause: 160, mood: 'mid' });
+          buf = '';
+        }
+        buf += ch;
+        if (SPEECH_PAUSE[ch] != null) {
+          const t = buf.trim();
+          if (t) out.push({ text: t, pause: SPEECH_PAUSE[ch], mood: SPEECH_MOOD[ch] || 'mid' });
+          buf = '';
+        }
+      }
+      if (buf.trim()) out.push({ text: buf.trim(), pause: SPEECH_PAUSE['。'], mood: 'decl' });
+      // 诗行 / 段末留更长的气口
+      if (li < lines.length - 1 && out.length) out[out.length - 1].pause = 620;
+    });
+    // 纯标点（如落单的「」）不单独送读，停顿并入上一句，避免引擎空转
+    const merged = [];
+    for (const c of out) {
+      if (!/[\u3400-\u9fff]/.test(c.text)) {
+        if (merged.length) merged[merged.length - 1].pause += c.pause;
+        continue;
+      }
+      merged.push(c);
     }
-    if (buf) out.push(buf);
-    return out;
+    return merged;
   }
 
   function updateSpeakBtn() {
@@ -923,10 +982,38 @@
     speechToken++;
     speechActive = false;
     speechPaused = false;
-    speechChunks = [];
+    speechQueue = [];
     speechIndex = 0;
+    if (speechTimer) { clearTimeout(speechTimer); speechTimer = null; }
     if (synth) synth.cancel();
     updateSpeakBtn();
+  }
+
+  function speakNext(token) {
+    if (token !== speechToken || !speechActive || speechPaused) return;
+    if (speechIndex >= speechQueue.length) { stopSpeech(); return; }
+    const chunk = speechQueue[speechIndex++];
+    const u = new SpeechSynthesisUtterance(chunk.text);
+    const v = pickZhVoice();
+    if (v) u.voice = v;
+    u.lang = (v && v.lang) || 'zh-CN';
+    // 抑扬顿挫：句读不同，语速与音高跟着变；重点句再放慢半拍
+    let rate = 0.9, pitch = speechMale ? 0.95 : 0.8;
+    if (chunk.mood === 'ask') { rate = 0.86; pitch += 0.11; }
+    else if (chunk.mood === 'excl') { rate = 0.88; pitch += 0.07; }
+    else if (chunk.mood === 'mid') { rate = 0.92; pitch -= 0.03; }
+    else if (chunk.mood === 'decl') { rate = 0.9; pitch -= 0.01; }
+    if (chunk.header) { rate = 0.84; pitch += 0.02; }
+    if (chunk.emphasis) { rate = Math.min(rate, 0.8); pitch += 0.03; }
+    u.rate = Math.max(0.6, Math.min(1.1, rate));
+    u.pitch = Math.max(0.5, Math.min(1.4, pitch));
+    u.volume = 1;
+    u.onend = () => {
+      if (token !== speechToken) return;
+      speechTimer = setTimeout(() => { speechTimer = null; speakNext(token); }, chunk.pause);
+    };
+    u.onerror = () => { if (token === speechToken) stopSpeech(); };
+    synth.speak(u);
   }
 
   function toggleSpeech() {
@@ -935,38 +1022,54 @@
       return;
     }
     if (speechActive) {
-      if (speechPaused) { synth.resume(); speechPaused = false; }
-      else { synth.pause(); speechPaused = true; }
+      if (speechPaused) {
+        speechPaused = false;
+        synth.resume();
+        if (!speechTimer && !synth.speaking) {
+          speechTimer = setTimeout(() => { speechTimer = null; speakNext(speechToken); }, 80);
+        }
+      } else {
+        speechPaused = true;
+        if (speechTimer) { clearTimeout(speechTimer); speechTimer = null; }
+        synth.pause();
+      }
       updateSpeakBtn();
       return;
     }
     const item = byId[currentId];
     if (!item) return;
-    const text = plain(item.pinyin || item.original || item.content || item.meaning || '');
-    const chunks = splitSpeech(text);
-    if (!chunks.length) return;
+    // 朗读顺序：标题 → 朝代 → 作者 → 正文
+    const queue = [];
+    const title = speechClean(item.title);
+    if (title) queue.push({ text: title, pause: 520, header: true, mood: 'title' });
+    const who = [speechDynasty(item.dynasty), speechClean(item.author)].filter(Boolean).join('，');
+    if (who) queue.push({ text: who, pause: 780, header: true, mood: 'title' });
+    queue.push(...splitSpeech(plain(bodyText(item))));
+    if (!queue.length) return;
+    // 重点句读出感情：放慢半拍，并在前一句后多留气口
+    const norm = s => String(s || '').replace(/[^\u4e00-\u9fa5]/g, '');
+    const keys = (KEY_LINES[item.id] || []).map(norm).filter(Boolean);
+    if (keys.length) {
+      queue.forEach((c, i) => {
+        if (c.header) return;
+        const t = norm(c.text);
+        if (t && keys.some(k => k.includes(t) || t.includes(k))) {
+          c.emphasis = true;
+          c.pause = Math.max(c.pause, 420);
+          if (i > 0) queue[i - 1].pause = Math.max(queue[i - 1].pause, 620);
+        }
+      });
+    }
     speechToken++;
     const token = speechToken;
-    speechChunks = chunks;
+    speechQueue = queue;
     speechIndex = 0;
     speechActive = true;
     speechPaused = false;
     synth.cancel();
     updateSpeakBtn();
-    const next = () => {
-      if (token !== speechToken) return;
-      if (speechIndex >= speechChunks.length) { stopSpeech(); return; }
-      const u = new SpeechSynthesisUtterance(speechChunks[speechIndex++]);
-      u.lang = 'zh-CN';
-      u.rate = 0.92;
-      u.pitch = 1;
-      const v = pickZhVoice();
-      if (v) u.voice = v;
-      u.onend = () => { if (token === speechToken) next(); };
-      u.onerror = () => { if (token === speechToken) stopSpeech(); };
-      synth.speak(u);
-    };
-    setTimeout(next, 60);
+    // cancel 后立刻 speak 在部分浏览器会被吞掉，延时起播更稳
+    speechTimer = setTimeout(() => { speechTimer = null; speakNext(token); }, 60);
   }
 
   function openDetail(id) {
@@ -1133,7 +1236,7 @@
     const list = (D.extras || []).map(x => ({ ...x, _kind: 'extra' })).filter(matchesFilter);
     const host = $('#panel-extra');
     if (!list.length) { host.innerHTML = ''; return; }
-    host.innerHTML = secHead('拓', 'v', '课外扩展', '名句名篇 · 拓展阅读', list.length) + gridHTML(list);
+    host.innerHTML = secHead('拓', 'v', '课外篇', '名句名篇 · 拓展阅读', list.length) + gridHTML(list);
   }
 
   function renderClassics() {
