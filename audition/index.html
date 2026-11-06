@@ -50,7 +50,10 @@
 </head>
 <body>
 <h1>朗读音色试听</h1>
-<p class="lead">下面是同一段内容的不同处理方式。逐条点开听，重点听<b>「风」这个字有没有破音/沙哑</b>，再对比整体吐字是否清楚。<br>直接在微信里打开也能播。</p>
+<p class="lead">三组试听，逐条点开听：<br>① 《咏鹅》开头「鹅，鹅，鹅」听<b>有没有起伏、够不够活泼</b>；<br>② 《风》听<b>标题的「风」有没有破音/沙哑</b>；<br>③ 《绝句》对比整体音色。<br>直接在微信里打开也能播。</p>
+
+<h2>《咏鹅》 唐 · 骆宾王 <span>重点听开头「鹅，鹅，鹅」</span></h2>
+<div id="tange"></div>
 
 <h2>《风》 唐 · 李峤 <span>重点听标题那个「风」</span></h2>
 <div id="wind"></div>
@@ -72,6 +75,13 @@ const GROUPS = {
     ['f3', '3 号 · 云健，柔化处理', '音色不变，削掉一点高频毛刺，听感更顺'],
     ['f4', '4 号 · 云扬', '新闻播报男声，吐字更硬更清楚'],
     ['f5', '5 号 · 云希', '青年男声，偏轻快'],
+  ],
+  tange: [
+    ['g1', '1 号 · 现在线上的读法', '三个「鹅」音高几乎一样，节奏也平'],
+    ['g2', '2 号 · 阶梯上扬', '鹅(低)→鹅(中)→鹅(高)，一句比一句高'],
+    ['g3', '3 号 · 低起高收', '起点更低，第三声抬得最高，起伏最大'],
+    ['g4', '4 号 · 渐强渐快', '音量一句比一句大，像越喊越高兴'],
+    ['g5', '5 号 · 促促长扬', '前两声短促，第三声拖长甩上去'],
   ],
   jueju: [
     ['j1', '1 号 · 云健（现在用的）', '当前全站音色'],
@@ -124,6 +134,7 @@ function toggle(id) {
 player.addEventListener('ended', () => { paint(player.dataset.id, '▶'); });
 player.addEventListener('error', () => { if (player.dataset.id) paint(player.dataset.id, '加载失败'); });
 
+build('tange', GROUPS.tange);
 build('wind', GROUPS.wind);
 build('jueju', GROUPS.jueju);
 </script>
