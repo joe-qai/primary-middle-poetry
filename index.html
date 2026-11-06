@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>墨韵 · 中小学古诗词全集</title>
 <meta name="description" content="K12 必背古诗词、文言文、散文、故事与课外篇，含拼音、译文、赏析与考点。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
 <style>
   :root {
     --ink: #20201d;
@@ -30,8 +28,8 @@
     --radius-lg: 14px;
     --shadow-1: 0 1px 2px rgba(60,45,20,0.05), 0 2px 10px rgba(60,45,20,0.05);
     --shadow-2: 0 2px 6px rgba(60,45,20,0.07), 0 12px 32px rgba(60,45,20,0.09);
-    --serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
-    --sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+    --sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Heiti SC', sans-serif;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -179,16 +177,11 @@
     position: absolute; left: 0.95rem; top: 50%; transform: translateY(-50%);
     color: var(--ink-4); font-size: 1rem; pointer-events: none;
   }
-  .chip-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .chip {
-    font-family: var(--sans); font-size: 0.76rem; font-weight: 400;
-    padding: 0.38rem 0.8rem; border-radius: 20px;
-    border: 1px solid var(--line-strong); background: transparent;
-    color: var(--ink-2); cursor: pointer; transition: all 0.18s;
-    letter-spacing: 0.03em;
+  .search-sum {
+    margin: 1.4rem 0 0; font-family: var(--sans); font-size: 0.84rem;
+    color: var(--ink-3); letter-spacing: 0.02em;
   }
-  .chip:hover { border-color: var(--accent-2); color: var(--accent); }
-  .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .search-sum b { color: var(--accent); font-weight: 600; }
 
   /* ============ MAIN / SECTIONS ============ */
   main { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0.5rem 1.5rem 6rem; }
@@ -611,12 +604,7 @@
 <div class="toolbar" id="toolbar">
   <div class="search">
     <span class="ico">⌕</span>
-    <input type="text" id="searchInput" placeholder="搜索标题、作者、诗句、译文…" autocomplete="off">
-  </div>
-  <div class="chip-row" id="chipRow">
-    <button class="chip on" data-filter="all">全部</button>
-    <button class="chip" data-filter="primary">小学</button>
-    <button class="chip" data-filter="middle">初中</button>
+    <input type="text" id="searchInput" placeholder="搜索标题、作者、诗句、译文…（全站）" autocomplete="off">
   </div>
 </div>
 
@@ -630,6 +618,7 @@
   <section class="panel" id="panel-story"></section>
   <section class="panel" id="panel-extra"></section>
   <section class="panel" id="panel-classics"></section>
+  <section class="panel" id="panel-search"></section>
   <section class="panel" id="panel-progress"></section>
 
   <div class="empty" id="emptyState">
@@ -1370,15 +1359,10 @@
   // ============================================================
   //  FILTER / SEARCH STATE
   // ============================================================
-  let filterLevel = 'all';
   let query = '';
 
+  // 搜索覆盖全站 286 条，不再按小学 / 初中筛选
   function matchesFilter(item) {
-    if (item._kind !== 'poem' && item._kind !== 'extra') {
-      // prose/story not filtered by level chips
-      return matchQuery(item);
-    }
-    if (filterLevel !== 'all' && item.level !== filterLevel) return false;
     return matchQuery(item);
   }
   function matchQuery(item) {
@@ -1390,6 +1374,37 @@
       plain(item.content), plain(item.meaning), (item.tags || []).join(' ')
     ].join(' ').toLowerCase();
     return hay.includes(query);
+  }
+
+  const SEARCH_GROUPS = [
+    { kind: 'poem', glyph: '诗', cls: '', label: '诗词', sub: '教材必背 · 小学 / 初中' },
+    { kind: 'prose', glyph: '文', cls: 'j', label: '散文', sub: '文言散文' },
+    { kind: 'story', glyph: '事', cls: 'j', label: '故事', sub: '典故故事' },
+    { kind: 'extra', glyph: '外', cls: 'v', label: '课外', sub: '课外拓展' },
+    { kind: 'classics', glyph: '名', cls: 'k', label: '名篇', sub: '名篇全文' },
+  ];
+  // 标题命中优先，其次作者，其余按原顺序
+  function searchRank(item) {
+    const t = String(item.title || '').toLowerCase();
+    if (t.includes(query)) return 0;
+    if (String(item.author || '').toLowerCase().includes(query)) return 1;
+    return 2;
+  }
+  function renderSearch() {
+    const host = $('#panel-search');
+    if (!host) return;
+    if (!query) { host.innerHTML = ''; return; }
+    const hits = allItems.filter(matchQuery);
+    if (!hits.length) { host.innerHTML = ''; return; }
+    let html = `<div class="search-sum">全站搜索「<b>${esc(query)}</b>」，命中 <b>${hits.length}</b> 篇</div>`;
+    SEARCH_GROUPS.forEach(g => {
+      const list = hits.filter(x => x._kind === g.kind)
+        .sort((a, b) => searchRank(a) - searchRank(b));
+      if (!list.length) return;
+      html += secHead(g.glyph, g.cls, g.label, g.sub, list.length);
+      html += gridHTML(list);
+    });
+    host.innerHTML = html;
   }
 
   // ============================================================
@@ -1548,14 +1563,17 @@
     renderStory();
     renderExtra();
     renderClassics();
+    renderSearch();
     renderProgress();
     updateEmpty();
   }
 
   function updateEmpty() {
-    const active = $('.nav-btn.active').dataset.panel;
+    const activeBtn = $('.nav-btn.active');
+    const active = activeBtn ? activeBtn.dataset.panel : '';
     let count = 0;
-    if (active === 'home') count = primaryPoems.filter(matchesFilter).length + middlePoems.filter(matchesFilter).length;
+    if (query) count = allItems.filter(matchQuery).length;
+    else if (active === 'home') count = primaryPoems.filter(matchesFilter).length + middlePoems.filter(matchesFilter).length;
     else if (active === 'primary') count = primaryPoems.filter(matchesFilter).length;
     else if (active === 'middle') count = middlePoems.filter(matchesFilter).length;
     else if (active === 'prose') count = (D.prose || []).filter(matchesFilter).length;
@@ -1566,16 +1584,19 @@
     $('#emptyState').classList.toggle('on', count === 0);
   }
 
-  function switchPanel(name) {
+  let currentPanel = 'home';
+
+  function activatePanel(name) {
     $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === name));
     $$('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-' + name));
     // toolbar only for content panels
-    const showToolbar = !['progress'].includes(name);
-    $('#toolbar').style.display = showToolbar ? '' : 'none';
-    // chips only meaningful in home/primary/middle/extra
-    const showChips = ['home', 'primary', 'middle', 'extra'].includes(name);
-    $('#chipRow').style.display = showChips ? '' : 'none';
+    $('#toolbar').style.display = name === 'progress' ? 'none' : '';
     updateEmpty();
+  }
+
+  function switchPanel(name) {
+    currentPanel = name;
+    activatePanel(name);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1583,30 +1604,23 @@
   //  EVENTS
   // ============================================================
   function bind() {
-    // nav
+    // nav：切换分区时清空搜索，回到完整列表
     $$('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchPanel(btn.dataset.panel));
-    });
-
-    // chips
-    $$('.chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        $$('.chip').forEach(c => c.classList.remove('on'));
-        chip.classList.add('on');
-        filterLevel = chip.dataset.filter;
-        renderAll();
-        updateEmpty();
+      btn.addEventListener('click', () => {
+        if (query) { query = ''; $('#searchInput').value = ''; renderAll(); }
+        switchPanel(btn.dataset.panel);
       });
     });
 
-    // search
+    // search：全站检索，命中后进入搜索结果面板
     let t = null;
     $('#searchInput').addEventListener('input', e => {
       clearTimeout(t);
       t = setTimeout(() => {
         query = e.target.value.trim().toLowerCase();
         renderAll();
-        updateEmpty();
+        if (query) activatePanel('search');
+        else switchPanel(currentPanel);
       }, 140);
     });
 
