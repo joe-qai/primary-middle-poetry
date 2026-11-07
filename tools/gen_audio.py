@@ -36,11 +36,6 @@ try:  # 表达力增强（分句拼接）需要 numpy；缺失时自动退回整
 except ImportError:  # pragma: no cover
     np = None
 
-try:  # 鹅叫合成需要 scipy 做滤波；缺失时退化为无噪声/无抖动
-    from scipy.signal import lfilter as _lfilter
-except ImportError:  # pragma: no cover
-    _lfilter = None
-
 ROOT = Path(__file__).resolve().parent.parent
 DATA_JS = ROOT / "data.js"
 AUDIO_DIR = ROOT / "audio"
@@ -195,30 +190,12 @@ def compose(item, join_header=False):
 
 AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 
-# 重复单字的开头（如「鹅，鹅，鹅，」）有两个问题：
-#   1) 整句合成时三个字音高、时长、停顿几乎一样，读成一条平线；
-#   2) 云健把单字「鹅」读成降调（100→80Hz），听感更接近四声，不是第二声。
-# 这里把开头拆成单字单独合成，再用 rubberband 分片变调把音高掰成上扬，
-# 末段做时长拉伸得到拖尾，最后拼回全篇。
-# 只影响该篇的朗读音频与时间轴，页面正文与句子切分不变。
-EXPR_OPENINGS = {
-    "p001": {
-        "match": "鹅，鹅，鹅，",
-        "text": "鹅",
-        "rate": "-40%",          # 单字语速
-        "bend": (0.88, 1.65),    # 分片变调系数：起 → 止（越大越高）
-        "slices": 10,            # 变调分片数，越多曲线越平滑
-        "tail": 2.4,             # 尾音拉伸倍数
-        "tail_from": 0.58,       # 从第几成开始接拖尾
-        "tail_src": (0.50, 0.85),  # 取哪一段元音做持续音
-        "tail_level": 0.045,     # 拖尾目标响度（补增益后），太低听不见、太高盖过字头
-        "tail_fade": 0.22,       # 拖尾淡出时长
-        "detune": [0.99, 1.01, 1.03],  # 三个字略微递进，避免完全一样
-        "gaps": [0.20, 0.20],
-        "lead_gap": 0.30,
-        "tail_gap": 0.32,
-    },
-}
+# 重复单字开头的「变调 + 拖尾」增强。
+#
+# 目前为空：用户明确要求《咏鹅》开头三个「鹅」按正常诗歌朗诵读，
+# 既不要拟声，也不要上扬/拖尾之类的夸张处理，因此 p001 走整段正常合成。
+# 若以后某篇确实需要分句增强，可在这里加回配置（字段见 git 历史 a75ce00）。
+EXPR_OPENINGS = {}
 
 
 def _tool(name):
@@ -384,118 +361,6 @@ def _with_tail(x, factor, start=0.58, tmpdir=None, src=(0.50, 0.85), target=0.03
     return _xfade(x[:s], tail, int(0.03 * AUDIO_SR))
 
 
-# ---------------------------------------------------------------- 鹅叫合成
-# 云健把单字「鹅」读成 100~130Hz 的成年人声（胸腔音），离真鹅差得远：
-# 真鹅叫基频在 350~500Hz，带明显粗糙/鼻音，谐波一直铺到 4kHz。
-# 这里用「谐波叠加 + 宽带共振峰 + 抖动/次谐波」直接合成，替代人声单字。
-# 仅影响 p001 朗读音频，页面正文不变。
-
-HONK_FORMS = (
-    (800, 520, 1.00),    # F1
-    (1650, 700, 0.62),   # F2
-    (2750, 1000, 0.30),  # F3
-    (4000, 1300, 0.13),  # F4
-)
-HONK_NASAL = (1250, 0.28, 300)
-
-
-def _vowel_gain(freq, forms=HONK_FORMS, nasal=HONK_NASAL, tilt=0.60, fref=500.0):
-    """声道幅频包络：每个谐波按这条曲线取幅度。"""
-    f = np.asarray(freq, dtype=float)
-    g = np.zeros_like(f)
-    for F, bw, a in forms:
-        g += a / np.sqrt(1.0 + ((f - F) / (bw / 2.0)) ** 2)
-    if nasal:
-        fn, depth, w = nasal
-        g *= 1.0 - depth * np.exp(-((f - fn) / w) ** 2)
-    g *= (np.maximum(f, fref) / fref) ** (-tilt)
-    return g
-
-
-def _bp(x, F, bw):
-    """二阶带通（用于气声与起音爆破）。无 scipy 时直接返回静音。"""
-    if _lfilter is None:
-        return np.zeros_like(x)
-    r = np.exp(-np.pi * bw / AUDIO_SR)
-    th = 2 * np.pi * F / AUDIO_SR
-    a1 = -2 * r * np.cos(th)
-    a2 = r * r
-    A = (1 - r) * np.sqrt(1 - 2 * r * np.cos(2 * th) + r * r)
-    return _lfilter([A], [1, a1, a2], x)
-
-
-def synth_honk(dur=0.34, f0=(410.0, 380.0), rough=1.0, sub=0.0, breath=0.05,
-               seed=1, rise=0.05, fall=0.14, flutter=32.0, am=0.12,
-               attack=0.010, release=0.09, burst=0.35, drive=0.85,
-               tilt=0.60, lowpass=6200):
-    """合成一声鹅叫。f0=(起始, 结束) 基频；rough 控制沙哑程度。"""
-    n = int(dur * AUDIO_SR)
-    t = np.arange(n) / AUDIO_SR
-    u = t / max(1e-6, dur)
-    rng = np.random.default_rng(seed)
-
-    # 基频：起音微扬、收尾下滑（真鹅叫的典型走向）
-    f = f0[0] + (f0[1] - f0[0]) * u
-    f *= 1 + 0.035 * np.sin(np.pi * np.minimum(1.0, u / 0.45))
-    if rise:
-        f *= 1 + rise * np.minimum(1.0, u / 0.25)
-    if fall:
-        f *= 1 - fall * np.maximum(0.0, u - 0.55) / 0.45
-    jit = np.zeros(n)
-    if _lfilter is not None:
-        jit = _lfilter([0.05], [1, -0.95], rng.normal(0, 1, n))
-    if np.abs(jit).max() > 1e-9:
-        jit = jit / np.abs(jit).max()
-    f *= 1 + rough * 0.018 * jit
-    f *= 1 + rough * 0.008 * np.sin(2 * np.pi * flutter * t + 1.1)
-
-    phase = 2 * np.pi * np.cumsum(f) / AUDIO_SR
-    kmax = max(1, int(lowpass / min(f0)))
-
-    harm = np.zeros(n)
-    for k in range(1, kmax + 1):
-        harm += _vowel_gain(k * f, tilt=tilt) * np.sin(k * phase + 0.5 * k)
-    if sub > 0:
-        harm += sub * _vowel_gain(0.5 * f, tilt=tilt) * np.sin(0.5 * phase + 0.4)
-        harm += 0.40 * sub * _vowel_gain(1.5 * f, tilt=tilt) * np.sin(1.5 * phase + 1.9)
-
-    # 先归一化，再叠加噪声/饱和，失真量才可控
-    harm /= max(1e-9, np.abs(harm).max())
-    out = harm.copy()
-
-    if burst > 0:                       # 起音「g」爆破
-        nb = int(0.016 * AUDIO_SR)
-        b = _bp(_bp(rng.normal(0, 1, nb), 1100, 1000), 2300, 1600)
-        b /= max(1e-9, np.abs(b).max())
-        out[:nb] += b * np.exp(-np.linspace(0, 5.0, nb)) * burst
-    if breath > 0:                      # 气声
-        nz = _bp(_bp(rng.normal(0, 1, n), 900, 1000), 2200, 1600)
-        out += breath * nz / max(1e-9, np.abs(nz).max())
-
-    env = np.ones(n)
-    a = max(4, int(attack * AUDIO_SR))
-    env[:a] = np.linspace(0, 1, a) ** 0.5
-    r = max(8, int(release * AUDIO_SR))
-    env[-r:] *= np.linspace(1, 0, r) ** 1.25
-    env *= 0.85 + 0.22 * np.minimum(1.0, u / 0.18)
-    shim = np.zeros(n)
-    if _lfilter is not None:
-        shim = _lfilter([0.08], [1, -0.92], rng.normal(0, 1, n))
-    if np.abs(shim).max() > 1e-9:
-        shim = shim / np.abs(shim).max()
-    env *= 1 + 0.06 * rough * shim
-    env *= 1 + am * np.sin(2 * np.pi * flutter * t)
-    out *= env
-
-    out = np.tanh(out * drive)
-    out -= out.mean()
-    pk = np.abs(out).max()
-    if pk > 0:
-        out = out / pk * 0.60
-    pad = int(0.008 * AUDIO_SR)
-    return np.concatenate([np.zeros(pad), out, np.zeros(pad)])
-
-
 async def speak(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
     """合成一段文本，返回 (mp3 字节, cues)。"""
     last_err = None
@@ -539,11 +404,8 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
 
     head_x, head_lead = _trim(_decode(head_bytes))
     rest_x, rest_lead = _trim(_decode(rest_bytes))
-    honk_mode = spec.get("mode") == "honk"
-    base_x = None
-    if not honk_mode:
-        base_bytes, _ = await speak(spec["text"], voice, spec["rate"])
-        base_x, _ = _trim(_decode(base_bytes))
+    base_bytes, _ = await speak(spec["text"], voice, spec["rate"])
+    base_x, _ = _trim(_decode(base_bytes))
 
     n_syl = max(1, opening.count(spec.get("text") or opening))
     detune = list(spec.get("detune") or [1.0])[:n_syl]
@@ -551,22 +413,18 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
         detune.append(1.0)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        if honk_mode:
-            # 直接合成鹅叫，不用人声单字
-            seg_x = [synth_honk(**h) for h in spec["honks"]]
-        else:
-            k0, k1 = spec["bend"]
-            seg = _with_tail(_bend(base_x, k0, k1, spec.get("slices", 10), tmpdir),
-                             spec.get("tail", 1.0), spec.get("tail_from", 0.50), tmpdir,
-                             src=tuple(spec.get("tail_src") or (0.50, 0.85)),
-                             target=spec.get("tail_level", 0.038),
-                             fade=spec.get("tail_fade", 0.18))
-            seg_x = []
-            for m in detune:
-                if abs(m - 1) < 0.001:
-                    seg_x.append(seg)
-                else:
-                    seg_x.append(_rubber(seg, tmpdir, pitch=m))
+        k0, k1 = spec["bend"]
+        seg = _with_tail(_bend(base_x, k0, k1, spec.get("slices", 10), tmpdir),
+                         spec.get("tail", 1.0), spec.get("tail_from", 0.50), tmpdir,
+                         src=tuple(spec.get("tail_src") or (0.50, 0.85)),
+                         target=spec.get("tail_level", 0.038),
+                         fade=spec.get("tail_fade", 0.18))
+        seg_x = []
+        for m in detune:
+            if abs(m - 1) < 0.001:
+                seg_x.append(seg)
+            else:
+                seg_x.append(_rubber(seg, tmpdir, pitch=m))
 
     gaps = spec.get("gaps") or [0.20] * (len(seg_x) - 1)
     parts = [head_x, _sil(spec.get("lead_gap", 0.28))]
