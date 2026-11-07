@@ -13,7 +13,8 @@
     python tools/gen_audio.py --all
     python tools/gen_audio.py --ids p001 --force
 
-依赖：pip install edge-tts
+依赖：pip install edge-tts numpy parselmouth
+      （ffmpeg 需带 rubberband；parselmouth 仅《咏鹅》音高修正用到，缺失时自动跳过）
 """
 
 import argparse
@@ -190,12 +191,26 @@ def compose(item, join_header=False):
 
 AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 
-# 重复单字开头的「变调 + 拖尾」增强。
+# 重复单字开头的处理。
 #
-# 目前为空：用户明确要求《咏鹅》开头三个「鹅」按正常诗歌朗诵读，
-# 既不要拟声，也不要上扬/拖尾之类的夸张处理，因此 p001 走整段正常合成。
-# 若以后某篇确实需要分句增强，可在这里加回配置（字段见 git 历史 a75ce00）。
-EXPR_OPENINGS = {}
+# 《咏鹅》开头「鹅，鹅，鹅」：用户要求按正常诗歌朗诵读，三个字都是第二声（阳平）
+# 且重读——不拟声、不拖尾、不夸张拉长。edge-tts 整段合成时会把这三个字读成
+# 降调（≈四声），所以这里单独合成单字，再用 Praat 把基频改成 100→120Hz 的
+# 平缓上扬，音量对齐到正文的 1.12 倍做出重读，最后按正常停顿拼回全篇。
+EXPR_OPENINGS = {
+    "p001": {
+        "match": "鹅，鹅，鹅，",
+        "text": "鹅",
+        "rate": "-26%",
+        "mode": "tone2",
+        "f0": (100.0, 120.0),   # 起 → 止（第二声的升调）
+        "stress": 1.12,         # 相对正文的音量倍数
+        "detune": [1.01, 1.0, 0.99],  # 三个字轻微递降，避免完全一样
+        "gaps": [0.20, 0.18],
+        "lead_gap": 0.28,
+        "tail_gap": 0.26,
+    },
+}
 
 
 def _tool(name):
@@ -361,6 +376,56 @@ def _with_tail(x, factor, start=0.58, tmpdir=None, src=(0.50, 0.85), target=0.03
     return _xfade(x[:s], tail, int(0.03 * AUDIO_SR))
 
 
+def _speech_rms(x, win=0.01):
+    """取有声帧的中位 RMS，用来把拼接的单字音量对齐到正常语句。"""
+    w = max(1, int(win * AUDIO_SR))
+    n = len(x) // w
+    if not n:
+        return 0.0
+    e = np.sqrt((np.asarray(x[: n * w]).reshape(n, w) ** 2).mean(axis=1))
+    e = e[e > max(1e-4, e.max() * 0.15)]
+    return float(np.median(e)) if len(e) else float(np.sqrt(np.mean(np.asarray(x) ** 2)))
+
+
+def _pitch_curve(x, f_start, f_end, tmpdir=None):
+    """用 Praat Manipulation 把整段音节的基频改成 f_start → f_end 的上扬曲线。
+
+    与分片 rubberband 不同，这里重写整条 PitchTier 再做 PSOLA 重合成：
+    共振峰与时长都保持原样，只改音高走向，听感更接近真人把字读成第二声。
+    缺 parselmouth 时原样返回。
+    """
+    if np is None:
+        return x
+    try:
+        import parselmouth
+        from parselmouth import praat
+    except ImportError:  # pragma: no cover
+        return x
+
+    x = np.asarray(x, dtype=np.float64)
+    try:
+        snd = parselmouth.Sound(x, sampling_frequency=AUDIO_SR)
+        dur = float(snd.get_total_duration())
+        manip = praat.call(snd, "To Manipulation", 0.01, 70, 500)
+        tier = praat.call(manip, "Extract pitch tier")
+        praat.call(tier, "Remove points between", 0.0, dur + 1.0)
+        # 只改有声段（首尾各留 4%），线性上升
+        a, b = dur * 0.04, dur * 0.96
+        for i in range(6):
+            frac = i / 5.0
+            praat.call(tier, "Add point", a + (b - a) * frac,
+                       f_start + (f_end - f_start) * frac)
+        praat.call([manip, tier], "Replace pitch tier")
+        out = praat.call(manip, "Get resynthesis (overlap-add)")
+        y = np.asarray(out.values[0], dtype=np.float64)
+    except Exception:  # noqa: BLE001  Praat 调用失败就退回原音
+        return x
+
+    if len(y) >= len(x):
+        return y[:len(x)]
+    return np.pad(y, (0, len(x) - len(y)))
+
+
 async def speak(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
     """合成一段文本，返回 (mp3 字节, cues)。"""
     last_err = None
@@ -413,18 +478,31 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
         detune.append(1.0)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        k0, k1 = spec["bend"]
-        seg = _with_tail(_bend(base_x, k0, k1, spec.get("slices", 10), tmpdir),
-                         spec.get("tail", 1.0), spec.get("tail_from", 0.50), tmpdir,
-                         src=tuple(spec.get("tail_src") or (0.50, 0.85)),
-                         target=spec.get("tail_level", 0.038),
-                         fade=spec.get("tail_fade", 0.18))
-        seg_x = []
-        for m in detune:
-            if abs(m - 1) < 0.001:
-                seg_x.append(seg)
-            else:
-                seg_x.append(_rubber(seg, tmpdir, pitch=m))
+        if spec.get("mode") == "tone2":
+            # 正常朗诵：每个字都重读成第二声（升调），不加拖尾、不拆停顿
+            f0_start, f0_end = spec["f0"]
+            stress = spec.get("stress", 1.12)
+            ref = _speech_rms(rest_x)
+            seg_x = []
+            for m in detune:
+                y = _pitch_curve(base_x, f0_start * m, f0_end * m)
+                r = _speech_rms(y)
+                if r > 1e-6 and ref > 1e-6:
+                    y = y * (ref * stress / r)
+                seg_x.append(y)
+        else:
+            k0, k1 = spec["bend"]
+            seg = _with_tail(_bend(base_x, k0, k1, spec.get("slices", 10), tmpdir),
+                             spec.get("tail", 1.0), spec.get("tail_from", 0.50), tmpdir,
+                             src=tuple(spec.get("tail_src") or (0.50, 0.85)),
+                             target=spec.get("tail_level", 0.038),
+                             fade=spec.get("tail_fade", 0.18))
+            seg_x = []
+            for m in detune:
+                if abs(m - 1) < 0.001:
+                    seg_x.append(seg)
+                else:
+                    seg_x.append(_rubber(seg, tmpdir, pitch=m))
 
     gaps = spec.get("gaps") or [0.20] * (len(seg_x) - 1)
     parts = [head_x, _sil(spec.get("lead_gap", 0.28))]
