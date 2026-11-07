@@ -25,6 +25,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -171,13 +172,17 @@ def split_sentences(body):
     return out
 
 
-def compose(item):
+def compose(item, join_header=False):
     """拼出朗读文本，返回 (text, 头部行数, 正文句数)。"""
     title = tts_clean(item.get("title"))
     who = "，".join(x for x in (dynasty_text(item.get("dynasty")), tts_clean(item.get("author"))) if x)
     body = pause_before_er(tts_clean(body_text(item)))
     header = [x for x in (title, who) if x]
-    text = "\n".join(header + ([body] if body else []))
+    if join_header and len(header) > 1:
+        # 单字标题单独起句容易硬起/破音，连成一句读更顺
+        text = "\n".join(["，".join(header)] + ([body] if body else []))
+    else:
+        text = "\n".join(header + ([body] if body else []))
     return text, len(header), len(split_sentences(body))
 
 
@@ -185,22 +190,28 @@ def compose(item):
 
 AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 
-# 重复单字的开头（如「鹅，鹅，鹅，」）整句合成时会读成一条平线：三个字音高、
-# 时长、停顿几乎一样。这里把开头拆成单字分别合成，用音高/语速阶梯造出起伏，
-# 再拼回全篇。只影响该篇的朗读音频与时间轴，页面正文与句子切分不变。
-#
-# segs: (文本, rate, pitch, volume)；gaps: 单字之间的静音（秒）
+# 重复单字的开头（如「鹅，鹅，鹅，」）有两个问题：
+#   1) 整句合成时三个字音高、时长、停顿几乎一样，读成一条平线；
+#   2) 云健把单字「鹅」读成降调（100→80Hz），听感更接近四声，不是第二声。
+# 这里把开头拆成单字单独合成，再用 rubberband 分片变调把音高掰成上扬，
+# 末段做时长拉伸得到拖尾，最后拼回全篇。
+# 只影响该篇的朗读音频与时间轴，页面正文与句子切分不变。
 EXPR_OPENINGS = {
     "p001": {
         "match": "鹅，鹅，鹅，",
-        "segs": [
-            ("鹅", "-18%", "-12Hz", "+0%"),
-            ("鹅", "-8%", "+18Hz", "+0%"),
-            ("鹅", "+2%", "+48Hz", "+0%"),
-        ],
-        "gaps": [0.22, 0.22],
-        "lead_gap": 0.28,
-        "tail_gap": 0.34,
+        "text": "鹅",
+        "rate": "-40%",          # 单字语速
+        "bend": (0.88, 1.65),    # 分片变调系数：起 → 止（越大越高）
+        "slices": 10,            # 变调分片数，越多曲线越平滑
+        "tail": 2.4,             # 尾音拉伸倍数
+        "tail_from": 0.58,       # 从第几成开始接拖尾
+        "tail_src": (0.50, 0.85),  # 取哪一段元音做持续音
+        "tail_level": 0.045,     # 拖尾目标响度（补增益后），太低听不见、太高盖过字头
+        "tail_fade": 0.22,       # 拖尾淡出时长
+        "detune": [0.99, 1.01, 1.03],  # 三个字略微递进，避免完全一样
+        "gaps": [0.20, 0.20],
+        "lead_gap": 0.30,
+        "tail_gap": 0.32,
     },
 }
 
@@ -244,6 +255,41 @@ def _sil(seconds):
     return np.zeros(int(round(seconds * AUDIO_SR)), dtype=np.float64)
 
 
+# 标题与作者连读的篇目（单字标题硬起容易破音）
+JOIN_HEADER = {"p006"}
+
+
+def split_header_cue(audio, cue):
+    """把「标题，朝代，作者」这一条 cue 按第一个明显停顿切成两段。"""
+    x = _decode(audio)
+    a = max(0, int(cue["t"] * AUDIO_SR))
+    b = min(len(x), int((cue["t"] + cue["d"]) * AUDIO_SR))
+    seg = x[a:b]
+    win = int(0.01 * AUDIO_SR)
+    n = len(seg) // win
+    mid = None
+    if n > 10:
+        energy = np.sqrt((seg[: n * win].reshape(n, win) ** 2).mean(axis=1))
+        voiced = np.where(energy > 0.012)[0]
+        run = None
+        for i in range(int(voiced[0]) if len(voiced) else 0, n):
+            if energy[i] < 0.012:
+                if run is None:
+                    run = i
+            else:
+                if run is not None and (i - run) >= 12:  # ≥120ms 的停顿
+                    mid = cue["t"] + (run + (i - run) / 2) * 0.01
+                    break
+                run = None
+    if mid is None:  # 没找到停顿就按字数估
+        mid = cue["t"] + cue["d"] * 0.25
+    first = {"t": cue["t"], "d": round(max(0.1, mid - cue["t"]), 3), "s": cue["s"].split("，")[0]}
+    second = {"t": round(mid, 3),
+              "d": round(max(0.1, cue["t"] + cue["d"] - mid), 3),
+              "s": cue["s"]}
+    return [first, second]
+
+
 def _trim(x, th=0.012, pad=0.03):
     """去掉首尾静音，返回 (新采样, 被裁掉的头部时长秒数)。"""
     win = int(0.01 * AUDIO_SR)
@@ -257,6 +303,80 @@ def _trim(x, th=0.012, pad=0.03):
     a = max(0, int(idx[0] * win - pad * AUDIO_SR))
     b = min(len(x), int((idx[-1] + 1) * win + pad * AUDIO_SR))
     return x[a:b], a / AUDIO_SR
+
+
+def _rubber(x, tmpdir, pitch=1.0, tempo=1.0):
+    """rubberband 变调/变速（保持共振峰，不改变音色）。"""
+    import wave
+
+    ff = _tool("ffmpeg")
+    src = Path(tmpdir) / "in.wav"
+    dst = Path(tmpdir) / "out.wav"
+    w = wave.open(str(src), "wb")
+    w.setnchannels(1)
+    w.setsampwidth(2)
+    w.setframerate(AUDIO_SR)
+    w.writeframes((np.clip(x, -1, 1) * 32767).astype(np.int16).tobytes())
+    w.close()
+    subprocess.run([ff, "-y", "-v", "error", "-i", str(src),
+                    "-af", f"rubberband=pitch={pitch:.4f}:tempo={tempo:.4f}", str(dst)], check=True)
+    w = wave.open(str(dst), "rb")
+    y = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float64) / 32768.0
+    w.close()
+    return y
+
+
+def _xfade(a, b, fade):
+    """等功率交叉淡化拼接。"""
+    fade = min(fade, len(a), len(b))
+    if fade < 8:
+        return np.concatenate([a, b])
+    t = np.linspace(0, 1, fade)
+    mix = a[-fade:] * np.cos(t * np.pi / 2) + b[:fade] * np.sin(t * np.pi / 2)
+    return np.concatenate([a[:-fade], mix, b[fade:]])
+
+
+def _bend(x, k0, k1, slices, tmpdir):
+    """分片变调：系数从 k0 线性升到 k1，片间交叉淡化，音高曲线变平滑上扬。"""
+    bounds = np.linspace(0, len(x), slices + 1).astype(int)
+    fade = int(0.02 * AUDIO_SR)
+    out = None
+    for i in range(slices):
+        a = max(0, bounds[i] - fade)
+        b = min(len(x), bounds[i + 1] + fade)
+        if b - a < int(0.02 * AUDIO_SR):
+            continue
+        k = k0 + (k1 - k0) * (i + 0.5) / max(1, slices - 1)
+        try:
+            seg = _rubber(x[a:b], tmpdir, pitch=k)
+        except Exception:  # noqa: BLE001  极短片段直接跳过变调
+            seg = x[a:b]
+        out = seg if out is None else _xfade(out, seg, fade)
+    return x if out is None else out
+
+
+def _with_tail(x, factor, start=0.58, tmpdir=None, src=(0.50, 0.85), target=0.038, fade=0.18):
+    """取字尾元音拉长成持续音（补增益 + 淡出），做出真正听得见的拖尾。"""
+    if factor <= 1.01:
+        return x
+    s = int(len(x) * start)
+    a, b = int(len(x) * src[0]), int(len(x) * src[1])
+    if b - a < int(0.02 * AUDIO_SR):
+        return x
+    try:
+        tail = _rubber(x[a:b], tmpdir, tempo=1.0 / factor)
+    except Exception:  # noqa: BLE001
+        return x
+    rms = float(np.sqrt(np.mean(tail ** 2)))
+    if rms > 1e-5:
+        tail = tail * min(3.5, target / rms)
+    f = int(fade * AUDIO_SR)
+    if f < len(tail):
+        f = min(f, int(0.45 * len(tail)))
+        tail[-f:] *= np.linspace(1, 0, f) ** 1.3
+    fi = int(0.03 * AUDIO_SR)
+    tail[:fi] *= np.linspace(0, 1, fi)
+    return _xfade(x[:s], tail, int(0.03 * AUDIO_SR))
 
 
 async def speak(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
@@ -299,15 +419,32 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
     rest = body[len(opening):].lstrip("\n")
     head_bytes, head_cues = await speak("\n".join(header), voice, rate)
     rest_bytes, rest_cues = await speak(rest, voice, rate)
-    seg_bytes = []
-    for (seg_text, seg_rate, seg_pitch, seg_vol) in spec["segs"]:
-        seg_bytes.append(await speak(seg_text, voice, seg_rate, seg_pitch, seg_vol))
+    base_bytes, _ = await speak(spec["text"], voice, spec["rate"])
 
     head_x, head_lead = _trim(_decode(head_bytes))
     rest_x, rest_lead = _trim(_decode(rest_bytes))
-    seg_x = [_trim(_decode(b[0]))[0] for b in seg_bytes]
+    base_x, _ = _trim(_decode(base_bytes))
 
-    gaps = spec.get("gaps") or [0.22] * (len(seg_x) - 1)
+    n_syl = max(1, opening.count(spec["text"]))
+    detune = list(spec.get("detune") or [1.0])[:n_syl]
+    while len(detune) < n_syl:
+        detune.append(1.0)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        k0, k1 = spec["bend"]
+        seg = _with_tail(_bend(base_x, k0, k1, spec.get("slices", 10), tmpdir),
+                         spec.get("tail", 1.0), spec.get("tail_from", 0.50), tmpdir,
+                         src=tuple(spec.get("tail_src") or (0.50, 0.85)),
+                         target=spec.get("tail_level", 0.038),
+                         fade=spec.get("tail_fade", 0.18))
+        seg_x = []
+        for m in detune:
+            if abs(m - 1) < 0.001:
+                seg_x.append(seg)
+            else:
+                seg_x.append(_rubber(seg, tmpdir, pitch=m))
+
+    gaps = spec.get("gaps") or [0.20] * (len(seg_x) - 1)
     parts = [head_x, _sil(spec.get("lead_gap", 0.28))]
     open_start = sum(len(p) for p in parts) / AUDIO_SR
     for i, x in enumerate(seg_x):
@@ -363,11 +500,14 @@ async def synth(item, voice, rate, out_mp3):
 
 
 async def synth_plain(item, voice, rate, out_mp3):
-    text, hdr, body_count = compose(item)
+    join = item["id"] in JOIN_HEADER
+    text, hdr, body_count = compose(item, join_header=join)
     if not text:
         raise ValueError("empty text")
     audio, cues = await speak(text, voice, rate)
     out_mp3.write_bytes(audio)
+    if join and hdr > 1 and cues:
+        cues = split_header_cue(audio, cues[0]) + cues[1:]
     dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
     return {
         "id": item["id"],
