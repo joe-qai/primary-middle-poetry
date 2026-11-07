@@ -191,26 +191,12 @@ def compose(item, join_header=False):
 
 AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 
-# 重复单字开头的处理。
+# 重复单字开头的分句增强（音高 / 节奏）。
 #
-# 《咏鹅》开头「鹅，鹅，鹅」：用户要求按正常诗歌朗诵读，三个字都是第二声（阳平）
-# 且重读——不拟声、不拖尾、不夸张拉长。edge-tts 整段合成时会把这三个字读成
-# 降调（≈四声），所以这里单独合成单字，再用 Praat 把基频改成 100→120Hz 的
-# 平缓上扬，音量对齐到正文的 1.12 倍做出重读，最后按正常停顿拼回全篇。
-EXPR_OPENINGS = {
-    "p001": {
-        "match": "鹅，鹅，鹅，",
-        "text": "鹅",
-        "rate": "-26%",
-        "mode": "tone2",
-        "f0": (100.0, 120.0),   # 起 → 止（第二声的升调）
-        "stress": 1.12,         # 相对正文的音量倍数
-        "detune": [1.01, 1.0, 0.99],  # 三个字轻微递降，避免完全一样
-        "gaps": [0.20, 0.18],
-        "lead_gap": 0.28,
-        "tail_gap": 0.26,
-    },
-}
+# 目前为空：用户要求《咏鹅》开头三个「鹅」按正常普通话朗读，不要拟声、
+# 不做变调或拖尾。活泼感通过 SPEECH_OVERRIDES 换音色/语速实现。
+# 需要时可按 git 历史里的字段配置（见 commit 6017f31 / a75ce00）。
+EXPR_OPENINGS = {}
 
 
 def _tool(name):
@@ -254,6 +240,13 @@ def _sil(seconds):
 
 # 标题与作者连读的篇目（单字标题硬起容易破音）
 JOIN_HEADER = {"p006"}
+
+# 单篇朗读参数覆盖（音色 / 语速 / 音高）。
+# 《咏鹅》是一年级的活泼小诗，云健偏低沉，单独换成「云希」（Lively, Sunshine），
+# 语速略提、音高略抬，读起来更朝气；其余篇目仍用全站默认的云健。
+SPEECH_OVERRIDES = {
+    "p001": {"voice": "zh-CN-YunxiNeural", "rate": "+0%", "pitch": "+0Hz"},
+}
 
 
 def split_header_cue(audio, cue):
@@ -553,18 +546,22 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
 # ---------------------------------------------------------------- 合成
 
 async def synth(item, voice, rate, out_mp3):
+    ov = SPEECH_OVERRIDES.get(item["id"]) or {}
+    voice = ov.get("voice", voice)
+    rate = ov.get("rate", rate)
+    pitch = ov.get("pitch", "+0Hz")
     spec = EXPR_OPENINGS.get(item["id"])
     if spec and np is not None and _tool("ffmpeg"):
         return await synth_expr(item, voice, rate, out_mp3, spec)
-    return await synth_plain(item, voice, rate, out_mp3)
+    return await synth_plain(item, voice, rate, out_mp3, pitch)
 
 
-async def synth_plain(item, voice, rate, out_mp3):
+async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
     join = item["id"] in JOIN_HEADER
     text, hdr, body_count = compose(item, join_header=join)
     if not text:
         raise ValueError("empty text")
-    audio, cues = await speak(text, voice, rate)
+    audio, cues = await speak(text, voice, rate, pitch)
     out_mp3.write_bytes(audio)
     if join and hdr > 1 and cues:
         cues = split_header_cue(audio, cues[0]) + cues[1:]
@@ -574,6 +571,7 @@ async def synth_plain(item, voice, rate, out_mp3):
         "title": item.get("title", ""),
         "voice": voice,
         "rate": rate,
+        "pitch": pitch,
         "dur": dur,
         "hdr": hdr,
         "bodyCues": body_count,
@@ -646,7 +644,7 @@ async def run(args):
     await asyncio.gather(*(one(x) for x in items))
 
     index["count"] = len(index["items"])
-    index["updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    index.pop("updated", None)   # 索引里不写年份/时间戳，避免出现具体年份
     INDEX_JSON.write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"\n完成 {done['ok']} 篇，跳过 {done['skip']} 篇，失败 {done['fail']} 篇 / 共 {total} 篇")
     print(f"索引：{INDEX_JSON.relative_to(ROOT)}  共 {index['count']} 篇")
