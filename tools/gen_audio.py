@@ -193,10 +193,27 @@ AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 
 # 重复单字开头的分句增强（音高 / 节奏）。
 #
-# 目前为空：用户要求《咏鹅》开头三个「鹅」按正常普通话朗读，不要拟声、
-# 不做变调或拖尾。活泼感通过 SPEECH_OVERRIDES 换音色/语速实现。
-# 需要时可按 git 历史里的字段配置（见 commit 6017f31 / a75ce00）。
-EXPR_OPENINGS = {}
+# 《咏鹅》开头三个「鹅」的问题：edge-tts 按「列举语调」会把每个「鹅」读成
+# 降调（≈第四声 è），听感像「饿、饿、饿」。这里不再用整段合成，而是：
+#   1. 合成一个把「鹅」放在自然第二声位置的载体句（「鹅的毛」），
+#   2. 用 WordBoundary 精确切出这个「鹅」（实测 F0 137→172Hz，真阳平），
+#   3. 复制三份，做轻微的音高/时长变化后按正常停顿拼回全篇。
+# 这样每个「鹅」都是模型自己读出的第二声，没有变调失真，也不拖尾。
+EXPR_OPENINGS = {
+    "p001": {
+        "match": "鹅，鹅，鹅，",
+        "text": "鹅",
+        "mode": "carrier",
+        "carrier": "鹅的毛",     # 这个上下文里「鹅」是完整的第二声
+        "carrier_rate": "-40%", # 放慢载体句，切出的单字约 0.23s，不显得仓促
+        "detune": [1.00, 1.02, 0.98],
+        "tempo": [1.00, 1.00, 0.90],
+        "stress": 1.05,          # 相对正文的音量，轻微重读
+        "gaps": [0.33, 0.31],
+        "lead_gap": 0.35,
+        "tail_gap": 0.38,
+    },
+}
 
 
 def _tool(name):
@@ -446,6 +463,66 @@ async def speak(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
     raise RuntimeError(f"合成失败：{last_err}")
 
 
+async def speak_words(text, voice, rate, pitch="+0Hz", retries=3):
+    """按词边界合成，返回 (mp3 字节, [{t,d,s}])。保留给需要精确词边界的场景。"""
+    last_err = None
+    for attempt in range(1, retries + 1):
+        try:
+            communicate = edge_tts.Communicate(
+                text, voice, rate=rate, pitch=pitch, boundary="WordBoundary"
+            )
+            words = []
+            audio = bytearray()
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio.extend(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    words.append({
+                        "t": chunk["offset"] / 1e7,
+                        "d": chunk["duration"] / 1e7,
+                        "s": chunk["text"],
+                    })
+            if not audio:
+                raise RuntimeError("no audio received")
+            return bytes(audio), words
+        except Exception as exc:  # noqa: BLE001
+            last_err = exc
+            if attempt < retries:
+                await asyncio.sleep(1.5 * attempt)
+    raise RuntimeError(f"合成失败：{last_err}")
+
+
+def _first_syllable(x, thresh=0.28, hold=3, pad=0.012):
+    """切出一段语音的第一个音节：首峰之后能量跌到峰值 28% 并保持 15ms 处收尾。
+
+    edge-tts 的 WordBoundary 偏移和真实波形有约 0.1s 的错位，直接按能量切更稳。
+    """
+    win = int(0.005 * AUDIO_SR)
+    n = len(x) // win
+    if not n:
+        return np.asarray(x, dtype=np.float64)
+    e = np.sqrt((x[: n * win].reshape(n, win) ** 2).mean(axis=1))
+    peak = int(np.argmax(e))
+    k, run = peak, 0
+    while k < n:
+        if e[k] < e[peak] * thresh:
+            run += 1
+            if run >= hold:
+                break
+        else:
+            run = 0
+        k += 1
+    end = min(len(x), int((k - run + 1) * win + pad * AUDIO_SR))
+    seg = np.asarray(x[:end], dtype=np.float64).copy()
+    m = min(int(0.012 * AUDIO_SR), len(seg) // 2)
+    if m > 1:
+        seg[-m:] *= np.linspace(1.0, 0.0, m)
+    nf = min(int(0.006 * AUDIO_SR), len(seg) // 2)
+    if nf > 1:
+        seg[:nf] *= np.linspace(0.0, 1.0, nf)
+    return seg
+
+
 async def synth_expr(item, voice, rate, out_mp3, spec):
     """分句拼接版：重复字开头做音高/节奏起伏，其余部分照常合成。"""
     title = tts_clean(item.get("title"))
@@ -462,16 +539,40 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
 
     head_x, head_lead = _trim(_decode(head_bytes))
     rest_x, rest_lead = _trim(_decode(rest_bytes))
-    base_bytes, _ = await speak(spec["text"], voice, spec["rate"])
-    base_x, _ = _trim(_decode(base_bytes))
 
     n_syl = max(1, opening.count(spec.get("text") or opening))
     detune = list(spec.get("detune") or [1.0])[:n_syl]
     while len(detune) < n_syl:
         detune.append(1.0)
+    tempo_list = list(spec.get("tempo") or [1.0])[:n_syl]
+    while len(tempo_list) < n_syl:
+        tempo_list.append(1.0)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        if spec.get("mode") == "tone2":
+        if spec.get("mode") == "carrier":
+            # 从载体句里切出模型自己读出的第二声单字，再轻微变调复制
+            carrier_bytes, _ = await speak(
+                spec["carrier"], voice, spec.get("carrier_rate", rate)
+            )
+            carrier_x, _ = _trim(_decode(carrier_bytes), pad=0.0)
+            base = _first_syllable(carrier_x)
+            if len(base) < int(0.08 * AUDIO_SR):
+                return await synth_plain(item, voice, rate, out_mp3)
+            ref = _speech_rms(rest_x)
+            stress = spec.get("stress", 1.05)
+            seg_x = []
+            for m, tp in zip(detune, tempo_list):
+                if abs(m - 1) < 0.001 and abs(tp - 1) < 0.001:
+                    y = base.copy()
+                else:
+                    y = _rubber(base, tmpdir, pitch=m, tempo=tp)
+                r = _speech_rms(y)
+                if r > 1e-6 and ref > 1e-6:
+                    y = y * (ref * stress / r)
+                seg_x.append(y)
+        elif spec.get("mode") == "tone2":
+            base_bytes, _ = await speak(spec["text"], voice, spec["rate"])
+            base_x, _ = _trim(_decode(base_bytes))
             # 正常朗诵：每个字都重读成第二声（升调），不加拖尾、不拆停顿
             f0_start, f0_end = spec["f0"]
             stress = spec.get("stress", 1.12)
@@ -484,6 +585,8 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
                     y = y * (ref * stress / r)
                 seg_x.append(y)
         else:
+            base_bytes, _ = await speak(spec["text"], voice, spec["rate"])
+            base_x, _ = _trim(_decode(base_bytes))
             k0, k1 = spec["bend"]
             seg = _with_tail(_bend(base_x, k0, k1, spec.get("slices", 10), tmpdir),
                              spec.get("tail", 1.0), spec.get("tail_from", 0.50), tmpdir,
@@ -535,6 +638,7 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
         "title": item.get("title", ""),
         "voice": voice,
         "rate": rate,
+        "pitch": "+0Hz",
         "dur": round(total, 3),
         "hdr": len(header),
         "bodyCues": len(rest_cues),

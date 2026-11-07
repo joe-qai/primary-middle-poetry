@@ -86,6 +86,7 @@ python tools/gen_audio.py --ids p001 --force     # 覆盖重生成
 ```
 
 - 音色：`zh-CN-YunjianNeural`（云健，浑厚男声），语速 `-10%`；《咏鹅》这类活泼童诗单独用 `zh-CN-YunxiNeural`（云希，明亮年轻男声）正常语速，见脚本内 `SPEECH_OVERRIDES`
+- 「鹅，鹅，鹅」：edge-tts 的列举语调会把三个字读成降调（像「饿」）。脚本改成先合成载体句「鹅的毛」，按能量切出模型自己读出的自然第二声（约 140→200Hz），再轻微变调复制三份拼回全篇，见 `EXPR_OPENINGS` 的 `carrier` 模式
 - 输出 MP3 为 24kHz / 48kbps 单声道，逐句时间轴来自 edge-tts 的 `SentenceBoundary`
 - 「而」在长句连读中容易被引擎吞掉：前文连续 6 字以上时脚本会自动补一个停顿逗号，**只影响音频，不改页面文本**
 - 音频地址带内容版本号 `?v=<hash>`，重新生成后不会被浏览器或 CDN 缓存住
