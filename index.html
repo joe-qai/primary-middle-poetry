@@ -458,6 +458,10 @@
   /* 重点考试诗句：整行加粗，便于复习时一眼锁定 */
   .poem-lines .ln.key-line { font-weight: 700; }
   .poem-lines .ln.key-line .ruby { font-weight: 700; }
+  /* 句内小段：窄屏放不下整联时，整段在逗号处换行，不把最后一两个字挤下去 */
+  .poem-lines .seg { display: inline-block; white-space: nowrap; vertical-align: baseline; }
+  /* 极窄屏/超长小段的兜底：放开 nowrap，允许自然折行，避免横向溢出 */
+  .poem-lines.freewrap .seg { white-space: normal; }
   .ruby { ruby-position: over; }
   ruby rt {
     font-family: var(--sans); font-size: 0.58em;
@@ -773,6 +777,11 @@
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+  // 把一句按逗号切成小段：窄屏放不下整联时整段换行，避免最后几个字单独掉行
+  function segWrap(html) {
+    const body = String(html || '').replace(/([，；、：])/g, '$1</span><span class="seg">');
+    return `<span class="seg">${body}</span>`;
+  }
   function plain(text) { return String(text || '').replace(/\{([^}]*)\}/g, ''); }
 
   // ---- icon helpers ----
@@ -828,8 +837,11 @@
   let currentId = null;
   let currentList = [];
 
-  // 诗行自适应字号：七言等略宽的行在窄屏会折行，二分找到能排成一行的最大字号。
-  // 明显过长的词句（会自然折成多行）不参与收缩，避免整首被压成小字。
+  // 诗行自适应字号：七言整联在窄屏会「最后一个字掉到下一行」，很丑。
+  // 策略：
+  //   1) 稍微缩小（最多到 80%）能整联排成一行的，就缩；
+  //   2) 还不够的，靠句内逗号把整联断成两段（7+7），字号保持不变；
+  //   3) 没有标点可断的超长句，才一路缩到下限，避免整首被压成小字。
   function fitPoemLines() {
     const host = $('#sheetBody') && $('#sheetBody').querySelector('.poem-lines');
     if (!host) return;
@@ -839,31 +851,64 @@
     set(1);
     const avail = host.clientWidth;
     if (!avail) return;
-    const nowrapWidth = el => {
+
+    const MIN = 0.62;     // 字号最多缩到 62%
+    const PREFER = 0.80;  // 低于这个比例就改为逗号处换行，别把字压太小
+    const limit = avail * 0.98;
+
+    // 行宽用 scrollWidth（= 实际排版宽度；Range 会把注音 rt 也算进去，偏大）
+    const lineWidth = el => {
       const prev = el.style.whiteSpace;
       el.style.whiteSpace = 'nowrap';
       const w = el.scrollWidth;
       el.style.whiteSpace = prev;
       return w;
     };
-    const normal = lines.filter(el => nowrapWidth(el) <= avail * 2.6);
-    if (!normal.length) return;
-    const fitsAll = v => {
-      set(v);
-      return normal.every(el => {
-        const lh = parseFloat(getComputedStyle(el).lineHeight) || 1;
-        return el.getBoundingClientRect().height <= lh * 1.4;
-      });
+    // 小段是 inline，量宽度时临时转成 inline-block
+    const segWidth = el => {
+      const pd = el.style.display, pw = el.style.whiteSpace;
+      el.style.display = 'inline-block';
+      el.style.whiteSpace = 'nowrap';
+      const w = el.getBoundingClientRect().width;
+      el.style.display = pd;
+      el.style.whiteSpace = pw;
+      return w;
     };
-    if (fitsAll(1)) { set(1); return; }
-    const MIN = 0.72;
-    if (!fitsAll(MIN)) { set(MIN); return; }
-    let lo = MIN, hi = 1;
-    for (let i = 0; i < 7; i++) {
-      const mid = (lo + hi) / 2;
-      if (fitsAll(mid)) lo = mid; else hi = mid;
+
+    let v = 1;
+    const oneLine = [];        // 期望排成一行的行，用于兜底校验
+    let overflow = false;      // 小段缩到下限仍放不下，兜底放开 nowrap
+    for (const el of lines) {
+      const segs = Array.from(el.querySelectorAll('.seg'));
+      const whole = lineWidth(el);
+      if (whole <= avail) { oneLine.push(el); continue; }
+      const need = limit / whole;
+      if (need >= PREFER) {                       // 缩一点就能排成一行
+        v = Math.min(v, need);
+        oneLine.push(el);
+      } else if (segs.length > 1) {               // 放不下：靠逗号断成多段
+        const segMax = Math.max(...segs.map(segWidth));
+        v = Math.min(v, Math.min(1, limit / segMax));
+        if (limit / segMax < MIN) overflow = true;
+      } else {                                     // 没有可断的标点，只能尽量缩
+        v = Math.min(v, Math.max(MIN, need));
+        if (need < MIN) overflow = true;
+        oneLine.push(el);
+      }
     }
-    set(lo * 0.995);
+    v = Math.max(MIN, v);
+    set(v);
+    host.classList.toggle('freewrap', overflow);
+
+    // 兜底：个别机型字体度量和测量有偏差，仍折行就再收一点
+    const wraps = () => oneLine.some(el => {
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || 1;
+      return el.getBoundingClientRect().height > lh * 1.4;
+    });
+    for (let i = 0; i < 6 && v > MIN && wraps(); i++) {
+      v = Math.max(MIN, v * 0.96);
+      set(v);
+    }
   }
 
   function detailHTML(item) {
@@ -880,7 +925,7 @@
         const rawLines = String(body).split('\n');
         const linesHTML = rawLines.map(rawLine => {
           const inner = splitRawSentences(rawLine)
-            .map(s => `<span class="sent">${rubyHTML(s)}</span>`).join('');
+            .map(s => `<span class="sent">${segWrap(rubyHTML(s))}</span>`).join('');
           return `<div class="ln${isKeyLine(item, rawLine) ? ' key-line' : ''}">${inner || '&nbsp;'}</div>`;
         }).join('');
         parts.push(`<div class="poem-lines">${linesHTML}</div>`);
