@@ -210,43 +210,6 @@
   .sec-head p { font-family: var(--sans); font-size: 0.76rem; font-weight: 300; color: var(--ink-4); letter-spacing: 0.08em; }
   .sec-head .cnt { margin-left: auto; font-family: var(--sans); font-size: 0.76rem; color: var(--ink-4); }
 
-  /* ============ 故事动画入口 ============ */
-  .anim-entry {
-    display: flex; align-items: center; gap: 0.85rem;
-    margin: 0 0 1.1rem;
-    padding: 0.85rem 1rem;
-    border-radius: 14px;
-    text-decoration: none;
-    color: var(--ink);
-    background:
-      radial-gradient(circle at 88% 12%, rgba(181,133,43,.18), transparent 58%),
-      linear-gradient(135deg, #fffdf7, #f7edda);
-    border: 1px solid rgba(168,52,42,.2);
-    box-shadow: 0 10px 24px -18px rgba(60,45,20,.5);
-    transition: transform .18s, box-shadow .18s;
-  }
-  .anim-entry:active { transform: scale(.99); }
-  .anim-entry .ap {
-    flex: none; width: 42px; height: 42px;
-    border-radius: 50%;
-    display: grid; place-items: center;
-    padding-left: 3px;
-    background: var(--accent); color: #fff;
-    font-size: 0.9rem;
-    box-shadow: 0 6px 14px -6px rgba(168,52,42,.8);
-  }
-  .anim-entry .at { display: flex; flex-direction: column; min-width: 0; }
-  .anim-entry .at b { font-size: 1.02rem; letter-spacing: 0.12em; line-height: 1.45; }
-  .anim-entry .at i {
-    font-family: var(--sans); font-style: normal;
-    font-size: 0.69rem; color: var(--ink-4); letter-spacing: 0.02em;
-  }
-  .anim-entry .ag {
-    margin-left: auto; flex: none;
-    font-family: var(--sans); font-size: 1.15rem;
-    color: var(--accent); line-height: 1;
-  }
-
   /* ============ CARD GRID ============ */
   .grid {
     display: grid;
@@ -1617,13 +1580,7 @@
     const list = (D.stories || []).map(x => ({ ...x, _kind: 'story' })).filter(matchesFilter);
     const host = $('#panel-story');
     if (!list.length) { host.innerHTML = ''; return; }
-    const anim = query ? '' : `
-      <a class="anim-entry" href="story/">
-        <span class="ap">▶</span>
-        <span class="at"><b>孟母三迁</b><i>故事动画 · 6 幕 · 37 秒</i></span>
-        <span class="ag">›</span>
-      </a>`;
-    host.innerHTML = secHead('事', 'j', '故事会', '典故故事 · 名人轶事', list.length) + anim + gridHTML(list);
+    host.innerHTML = secHead('事', 'j', '故事会', '典故故事 · 名人轶事', list.length) + gridHTML(list);
   }
   function renderExtra() {
     const list = (D.extras || []).map(x => ({ ...x, _kind: 'extra' })).filter(matchesFilter);
