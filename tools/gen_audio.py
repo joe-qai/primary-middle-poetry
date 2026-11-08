@@ -157,6 +157,25 @@ def pause_before_er(s):
     return "".join(out)
 
 
+# 专名 / 多音字：只替换送进 TTS 的文本，读出来后再把 cue 文本还原成页面原文。
+# 长度必须一致，否则时间轴会错位。
+PRONOUNCE = {
+    "张僧繇": "张僧由",   # 繇 yóu（教育部《重編國語辭典》注 zhāng sēng yóu），避免引擎改读 yáo
+}
+
+
+def tts_pronounce(s):
+    for k, v in PRONOUNCE.items():
+        s = s.replace(k, v)
+    return s
+
+
+def restore_pronounce(s):
+    for k, v in PRONOUNCE.items():
+        s = s.replace(v, k)
+    return s
+
+
 def split_sentences(body):
     """与前端 splitRawSentences 完全一致：按行、按句末标点切分。"""
     out = []
@@ -441,7 +460,7 @@ async def speak(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
     last_err = None
     for attempt in range(1, retries + 1):
         try:
-            communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch, volume=volume)
+            communicate = edge_tts.Communicate(tts_pronounce(text), voice, rate=rate, pitch=pitch, volume=volume)
             cues = []
             audio = bytearray()
             async for chunk in communicate.stream():
@@ -451,7 +470,7 @@ async def speak(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
                     cues.append({
                         "t": round(chunk["offset"] / 1e7, 3),
                         "d": round(chunk["duration"] / 1e7, 3),
-                        "s": chunk["text"],
+                        "s": restore_pronounce(chunk["text"]),
                     })
             if not audio:
                 raise RuntimeError("no audio received")
