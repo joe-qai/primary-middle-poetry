@@ -3,10 +3,11 @@
  "title": "送元二使安西",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 13.542,
  "hdr": 2,
  "bodyCues": 2,
- "v": "52e41486",
+ "v": "e06f7ba7",
  "cues": [
   {
    "t": 0.1,

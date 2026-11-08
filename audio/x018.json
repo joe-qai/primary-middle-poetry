@@ -3,10 +3,11 @@
  "title": "阿房宫赋",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 170.681,
  "hdr": 2,
  "bodyCues": 33,
- "v": "4eb208b1",
+ "v": "72ac3a30",
  "cues": [
   {
    "t": 0.1,

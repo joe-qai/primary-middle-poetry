@@ -3,10 +3,11 @@
  "title": "蝉",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 10.278,
  "hdr": 2,
  "bodyCues": 2,
- "v": "d21eabff",
+ "v": "201be65e",
  "cues": [
   {
    "t": 0.1,

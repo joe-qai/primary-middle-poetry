@@ -3,6 +3,7 @@
  "title": "归去来兮辞",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 179.569,
  "hdr": 2,
  "bodyCues": 49,

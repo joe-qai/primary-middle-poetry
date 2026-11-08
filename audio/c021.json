@@ -3,10 +3,11 @@
  "title": "石钟山记",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 155.402,
  "hdr": 2,
  "bodyCues": 25,
- "v": "f39438e5",
+ "v": "a412df3d",
  "cues": [
   {
    "t": 0.1,

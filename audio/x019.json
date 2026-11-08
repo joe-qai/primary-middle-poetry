@@ -3,6 +3,7 @@
  "title": "逍遥游",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 465.515,
  "hdr": 2,
  "bodyCues": 88,
