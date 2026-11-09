@@ -347,6 +347,7 @@ PRONOUNCE = {
     "男有分": "男有份",           # 分 fèn
     "货恶其": "货误其",           # 恶 wù
     "力恶其": "力误其",
+    "不教": "不让",                   # 教 jiào（出塞：不教胡马度阴山）
     "人未还": "人未环",               # 还 huán（出塞）
     "终不还": "终不环",               # 还 huán（从军行）
     "相与还": "相与环",               # 还 huán（饮酒）
@@ -711,52 +712,30 @@ async def speak_words(text, voice, rate, pitch="+0Hz", retries=3):
 
 async def speak_segmented(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
     """按逗号/分号分段合成，每段单独获取 SentenceBoundary，合并后返回完整音频与 cues。
-    同时处理 [PAUSE] 标记：在停顿处插入静音，确保诗词内部有意义单元的准确时间戳。"""
+    只按中文逗号/分号切分（不按[PAUSE]），段间短停0.15s，保持朗诵流畅感。"""
     last_err = None
     for attempt in range(1, retries + 1):
         try:
-            # 先处理 [PAUSE] 标记（诗词内部的节奏停顿）——拆成独立片段
-            has_pause_marker = '[PAUSE]' in text
-            if has_pause_marker:
-                # 拆分后保留每个片段及其后的逗号/分号后缀
-                raw_parts = text.split('[PAUSE]')
-                segments = []
-                i = 0
-                while i < len(raw_parts):
-                    seg = raw_parts[i].strip()
-                    if not seg:
-                        i += 1
-                        continue
-                    # 下一部分以逗号/分号开头 → 把它归到本段的后缀
-                    suffix = ''
-                    if i + 1 < len(raw_parts):
-                        nxt = raw_parts[i + 1]
-                        m = re.match(r'^([，；]+)', nxt)
-                        if m:
-                            suffix = m.group(1)
-                    segments.append((seg, suffix))
-                    i += 1
-            else:
-                # 正常按逗号/分号分割（保留分隔符以便还原）
-                parts = re.split(r'([，；])', text)
-                segments = []
-                i = 0
-                while i < len(parts):
-                    seg = parts[i].strip()
-                    sep = parts[i + 1] if i + 1 < len(parts) else ''
-                    if seg:
-                        segments.append((seg, sep))
-                    i += 2
+            # 只按逗号/分号分割，不在内部插入PAUSE标记
+            parts = re.split(r'([，；])', text)
+            segments = []
+            i = 0
+            while i < len(parts):
+                seg = parts[i].strip()
+                sep = parts[i + 1] if i + 1 < len(parts) else ''
+                if seg:
+                    segments.append((seg, sep))
+                i += 2
             if not segments:
                 raise RuntimeError("empty segments")
 
             all_audio = bytearray()
             all_cues = []
             offset = 0.0
-            PAUSE_MS = 300  # 逗号/分号/[PAUSE]后的固定停顿（毫秒）→ 0.3s
+            PAUSE_MS = 150  # 逗号/分号后的停顿（毫秒）→ 0.15s，保持流畅
 
             for si, (seg_text, seg_sep) in enumerate(segments):
-                inner = seg_text.rstrip('，；')  # 去除末尾逗号和分号（它们已被当作后缀单独保存）
+                inner = seg_text.rstrip('，；')
                 seg_text_clean = tts_pronounce(inner)
                 seg_audio, seg_cues = await speak(seg_text_clean, voice, rate, pitch, volume, retries)
                 seg_dur = sum(c["t"] + c["d"] for c in seg_cues) if seg_cues else 0.0
@@ -954,9 +933,8 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
     body_text_for_check = pause_before_er(tts_clean(body_text(item)))
     has_comma_semicolon = any(ch in body_text_for_check for ch in '，；')
     if is_poem and (has_comma_semicolon or any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())):
-        # 在诗词行内插入 [PAUSE] 标记，确保五言「二/三」七言「四/三」节奏正确
-        body_with_pauses = pause_in_poem_lines(body_text_for_check)
-        audio, cues, total = await speak_segmented(body_with_pauses, voice, rate, pitch)
+        # 诗词类按逗号/分号分段合成，段间短停0.15s保持流畅朗诵感
+        audio, cues, total = await speak_segmented(body_text_for_check, voice, rate, pitch)
         # 合并 header cues（从完整文本合成）
         header_parts = [x for x in (tts_clean(item.get("title")),
                                      "，".join(x for x in (dynasty_text(item.get("dynasty")),
