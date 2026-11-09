@@ -945,11 +945,27 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
         h_audio, h_cues = await speak(header_text, voice, rate)
         full_audio = h_audio + audio
         out_mp3.write_bytes(full_audio)
-        offset = round(sum(c["t"] + c["d"] for c in h_cues), 3) if h_cues else 0.0
+        # 用实际音频时长校准最后一句 cue 的结束时间
+        import subprocess as _sp
+        with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as _tmp:
+            _tmp.write(full_audio)
+            _tmp_path = _tmp.name
+        try:
+            _r = _sp.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+                          '-of', 'default=noprint_wrappers=1:nokey=1', _tmp_path],
+                         capture_output=True, text=True)
+            actual_dur = float(_r.stdout.strip())
+        finally:
+            os.unlink(_tmp_path)
+        offset = round(h_cues[-1]["t"] + h_cues[-1]["d"], 3) if h_cues else 0.0
         for c in cues:
             c["t"] = round(c["t"] + offset, 3)
         cues = h_cues + cues
-        dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
+        # 校准最后一句的结束时间到实际音频长度
+        if cues:
+            last = cues[-1]
+            last["d"] = round(max(0.05, actual_dur - last["t"]), 3)
+        dur = actual_dur
         return {
             "id": item["id"],
             "title": item.get("title", ""),
