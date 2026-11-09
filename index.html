@@ -615,6 +615,39 @@
     .prog-card h3 { font-size: 0.96rem; }
     .prog-card .sub { font-size: 0.8rem; }
   }
+
+  /* 诗人组合 */
+  .group-card {
+    background: var(--paper);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    border: 1px solid transparent;
+  }
+  .group-card:hover, .group-card:focus-visible {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border-color: var(--jade);
+  }
+  .group-name { font-size: 1.15rem; font-weight: 700; color: var(--ink); margin-bottom: 0.2rem; }
+  .group-meta { font-size: 0.78rem; color: var(--ink-3); margin-bottom: 0.35rem; }
+  .group-members { font-size: 0.92rem; color: var(--ink-2); margin-bottom: 0.3rem; }
+  .group-desc { font-size: 0.82rem; color: var(--ink-4); line-height: 1.5; }
+  .group-intro {
+    background: var(--ink-4);
+    color: var(--paper);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0 1rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  .member-sections { display: flex; flex-direction: column; gap: 1.5rem; }
+  .member-block h3 { font-size: 1rem; color: var(--ink-2); margin: 0 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px dashed var(--line); }
+  .btn-back { background: none; border: 1px solid var(--ink-3); color: var(--ink-2); border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer; font-size: 0.88rem; margin-bottom: 0.75rem; }
+  .btn-back:hover { background: var(--ink-4); color: var(--paper); }
+
 </style>
 </head>
 <body>
@@ -629,6 +662,7 @@
     <div class="stat"><b id="statStory">—</b><span>故事典故</span></div>
     <div class="stat"><b id="statExt">—</b><span>课外篇</span></div>
     <div class="stat"><b id="statCls">—</b><span>名篇馆</span></div>
+    <div class="stat"><b id="statGrp">—</b><span>诗人组合</span></div>
   </div>
 </header>
 
@@ -641,6 +675,7 @@
     <button class="nav-btn" data-panel="story">故事会<span class="n" id="navStoN"></span></button>
     <button class="nav-btn" data-panel="extra">课外篇<span class="n" id="navExtN"></span></button>
     <button class="nav-btn" data-panel="classics">名篇馆<span class="n" id="navClsN"></span></button>
+    <button class="nav-btn" data-panel="groups">诗人组合<span class="n" id="navGrpN"></span></button>
     <button class="nav-btn" data-panel="progress">进度</button>
     <div class="nav-spacer"></div>
     <div class="progress-pill" id="navProgress">已学 <b>0</b></div>
@@ -664,6 +699,7 @@
   <section class="panel" id="panel-story"></section>
   <section class="panel" id="panel-extra"></section>
   <section class="panel" id="panel-classics"></section>
+  <section class="panel" id="panel-groups"></section>
   <section class="panel" id="panel-search"></section>
   <section class="panel" id="panel-progress"></section>
 
@@ -1480,6 +1516,7 @@
     if (panel === 'story') return (D.stories || []).map(x => ({ ...x, _kind: 'story' }));
     if (panel === 'extra') return (D.extras || []).map(x => ({ ...x, _kind: 'extra' }));
     if (panel === 'classics') return (D.classics || []).map(x => ({ ...x, _kind: 'classics' }));
+    if (panel === 'groups') return [];
     return allItems;
   }
 
@@ -1589,14 +1626,164 @@
     host.innerHTML = secHead('拓', 'v', '课外篇', '名句名篇 · 拓展阅读', list.length) + gridHTML(list);
   }
 
-  function renderClassics() {
+    function renderClassics() {
     const list = (D.classics || []).map(x => ({ ...x, _kind: 'classics' })).filter(matchesFilter);
     const host = $('#panel-classics');
     if (!list.length) { host.innerHTML = ''; return; }
     host.innerHTML = secHead('典', 'k', '名篇馆', '课标名篇 · 全文精读', list.length) + gridHTML(list);
   }
 
-  function renderProgress() {
+    // ============================================================
+  //  诗人组合
+  // ============================================================
+  const GROUPS_DATA = [
+    { id:"g001", name:"三曹", dynasty:"汉魏",
+      desc:"曹操、曹丕、曹植，父子三人均以诗名著称，开创建安风骨。",
+      members:[
+        {name:"曹操",items:["p099","p103","p117"]},
+        {name:"曹丕",items:["p191","p192"]},
+        {name:"曹植",items:["p056","p100"]}
+      ]},
+    { id:"g002", name:"建安七子", dynasty:"汉末",
+      desc:"孔融、陈琳、王粲、徐干、阮瑀、应玚、刘桢，建安文学骨干群体。本馆收录其存世作品。",
+      members:[
+        {name:"孔融",items:[]},
+        {name:"陈琳",items:[]},
+        {name:"王粲",items:["p193"]},
+        {name:"徐干",items:[]},
+        {name:"阮瑀",items:[]},
+        {name:"应玚",items:[]},
+        {name:"刘桢",items:["p032"]}
+      ]},
+    { id:"g003", name:"竹林七贤", dynasty:"魏晋",
+      desc:"嵇康、阮籍、山涛、向秀、刘伶、王戎、阮咸，崇尚自然、不拘礼法的名士群体。阮咸无诗作传世，列入以全群像。",
+      members:[
+        {name:"嵇康",items:["x025"]},
+        {name:"阮籍",items:["x026"]},
+        {name:"山涛",items:["x027"]},
+        {name:"向秀",items:["x028"]},
+        {name:"刘伶",items:["x029"]},
+        {name:"王戎",items:["s025"]},
+        {name:"阮咸",items:[]}
+      ]},
+    { id:"g004", name:"初唐四杰", dynasty:"初唐",
+      desc:"王勃、杨炯、卢照邻、骆宾王，初唐诗坛先驱，一扫六朝浮靡之风。",
+      members:[
+        {name:"王勃",items:["p011","x012"]},
+        {name:"杨炯",items:["p194"]},
+        {name:"卢照邻",items:["p195"]},
+        {name:"骆宾王",items:["p015"]}
+      ]},
+    { id:"g005", name:"唐宋八大家", dynasty:"唐·宋",
+      desc:"韩愈、柳宗元、欧阳修、苏洵、苏轼、苏辙、王安石、曾巩，古文运动核心人物。",
+      members:[
+        {name:"韩愈",items:["p080","w016","x016"]},
+        {name:"柳宗元",items:["w007","x014"]},
+        {name:"欧阳修",items:["m010","w010","x005"]},
+        {name:"苏洵",items:["c019"]},
+        {name:"苏轼",items:["m006","m021","p123","x004","x013"]},
+        {name:"苏辙",items:["w033"]},
+        {name:"王安石",items:["m014","p098","p127","w021","w022","w023"]},
+        {name:"曾巩",items:["w034"]}
+      ]},
+    { id:"g006", name:"三苏", dynasty:"宋",
+      desc:"苏洵、苏轼、苏辙父子三人，同为唐宋八大家成员，文章气魄宏大，为宋代散文高峰。",
+      members:[
+        {name:"苏洵",items:["c019"]},
+        {name:"苏轼",items:["m006","m021","p123","x004","x013"]},
+        {name:"苏辙",items:["w033"]}
+      ]},
+    { id:"g007", name:"大李杜", dynasty:"唐",
+      desc:"李白、杜甫，盛唐诗歌双峰，一浪漫一写实，并称「李杜」。",
+      members:[
+        {name:"李白",items:["m001","p008","p030","p076","p088","p101","p119","p121","x007","x008"]},
+        {name:"杜甫",items:["m002","p024","p047","p074","p084","p092","p105","p120","p126","p128","p132","x024"]}
+      ]},
+    { id:"g008", name:"小李杜", dynasty:"晚唐",
+      desc:"李商隐、杜牧，晚唐诗坛双璧，诗风各树一帜。",
+      members:[
+        {name:"李商隐",items:["m007","p060","p110","x002","x011"]},
+        {name:"杜牧",items:["m004","p034","p086","p097","p106","p116"]}
+      ]},
+    { id:"g009", name:"苏辛", dynasty:"宋",
+      desc:"苏轼、辛弃疾，宋词豪放派两大代表，词风雄浑壮阔。",
+      members:[
+        {name:"苏轼",items:["m006","m021","p123","x004","x013"]},
+        {name:"辛弃疾",items:["m025","p050","p124","p135","x021"]}
+      ]},
+  ];
+
+  function renderGroups() {
+    const host = document.getElementById("panel-groups");
+    if (!host) return;
+    let html = "<div class=\"sec-head j\"><div class=\"glyph\">群</div><div><h2>诗人组合</h2><p>诗词流派 · 名家群体 · 相互映照</p></div></div>";
+    for (const g of GROUPS_DATA) {
+      const totalItems = g.members.reduce((s,m) => s + m.items.length, 0);
+      const memberNames = g.members.map(m => esc(m.name)).join("、");
+      html += `
+        <div class="group-card" data-gid="${esc(g.id)}" tabindex="0" role="button" aria-label="查看：${esc(g.name)}">
+          <div class="group-name">${esc(g.name)}</div>
+          <div class="group-meta">${esc(g.dynasty)} · ${g.members.length} 人 · ${totalItems} 篇</div>
+          <div class="group-members">${memberNames}</div>
+          <div class="group-desc">${esc(g.desc)}</div>
+        </div>`;
+    }
+    host.innerHTML = html;
+    host.querySelectorAll(".group-card").forEach(card => {
+      card.addEventListener("click", () => showGroupDetail(card.dataset.gid));
+      card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showGroupDetail(card.dataset.gid); }});
+    });
+  }
+
+  function showGroupDetail(gid) {
+    const g = GROUPS_DATA.find(x => x.id === gid);
+    if (!g) return;
+    const memberItems = [];
+    for (const m of g.members) {
+      for (const id of m.items) {
+        const it = D.poems?.find(x=>x.id===id) || D.prose?.find(x=>x.id===id) ||
+                   D.extras?.find(x=>x.id===id) || D.stories?.find(x=>x.id===id) ||
+                   D.classics?.find(x=>x.id===id);
+        if (it) memberItems.push({ ...it, _author: m.name });
+      }
+    }
+    const byAuthor = {};
+    memberItems.forEach(it => {
+      (byAuthor[it._author] = byAuthor[it._author] || []).push(it);
+    });
+    let html = `
+      <button class="btn-back" onclick="switchPanel(currentPanel||'home')">← 返回</button>
+      <div class="sec-head j"><div class="glyph">${esc(g.name[0])}</div>
+        <div><h2>${esc(g.name)}</h2><p>${esc(g.dynasty)} · ${g.members.length} 人 · ${memberItems.length} 篇</p></div>
+      </div>
+      <div class="group-intro">${esc(g.desc)}</div>
+      <div class="member-sections">`;
+    for (const [author, items] of Object.entries(byAuthor)) {
+      html += `<div class="member-block"><h3>${esc(author)}</h3>`;
+      for (const it of items) {
+        const meta = KIND_META[it._kind] || KIND_META.poem;
+        const grade = it.grade ? `<span class="grade-badge">${esc(it.grade)}</span>` : "";
+        const tag = it.tag ? `<span class="tag2">${esc(it.tag)}</span>` : "";
+        const excerpt = plain(it.pinyin || it.content || it.summary || '').replace(/\s+/g,' ').trim().slice(0, 40);
+        html += `<article class="card ${meta.cls}" tabindex="0" role="button"
+          data-id="${esc(it.id)}" onclick="openDetail('${esc(it.id)}')">
+          <div class="card-top">
+            <span class="card-title">${esc(it.title)}</span> ${grade}${tag}
+          </div>
+          <div class="card-excerpt">${esc(excerpt)||'（点击查看）'}</div>
+        </article>`;
+      }
+      html += "</div>";
+    }
+    html += "</div>";
+    const host = $('#panel-groups');
+    host.innerHTML = html;
+    host.classList.add("on");
+    $$(".panel").forEach(p => { if (p.id !== "panel-groups") p.classList.remove("on"); });
+    switchPanel("groups");
+  }
+
+function renderProgress() {
     const host = $('#panel-progress');
     const total = allItems.length;
     const doneCount = allItems.filter(x => done.has(x.id)).length;
@@ -1680,6 +1867,7 @@
     $('#statStory').textContent = (D.stories || []).length;
     $('#statExt').textContent = (D.extras || []).length;
     $('#statCls').textContent = (D.classics || []).length;
+    $('#statGrp').textContent = GROUPS_DATA.length;
   }
 
   function renderAll() {
@@ -1690,6 +1878,7 @@
     renderStory();
     renderExtra();
     renderClassics();
+    renderGroups();
     renderSearch();
     renderProgress();
     updateEmpty();
