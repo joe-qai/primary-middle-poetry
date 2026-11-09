@@ -963,30 +963,43 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
                                                            tts_clean(item.get("author"))) if x)) if x]
         header_text = "\n".join(header_parts)
         h_audio, h_cues = await speak(header_text, voice, rate)
-        out_mp3.write_bytes(h_audio + audio)
+        full_audio = h_audio + audio
+        out_mp3.write_bytes(full_audio)
         offset = round(sum(c["t"] + c["d"] for c in h_cues), 3) if h_cues else 0.0
         for c in cues:
             c["t"] = round(c["t"] + offset, 3)
         cues = h_cues + cues
         dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
+        return {
+            "id": item["id"],
+            "title": item.get("title", ""),
+            "voice": voice,
+            "rate": rate,
+            "pitch": pitch,
+            "dur": dur,
+            "hdr": hdr,
+            "bodyCues": body_count,
+            "v": hashlib.md5(full_audio).hexdigest()[:8],
+            "cues": cues,
+        }
     else:
         audio, cues = await speak(text, voice, rate, pitch)
         out_mp3.write_bytes(audio)
         if join and hdr > 1 and cues:
             cues = split_header_cue(audio, cues[0]) + cues[1:]
         dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
-    return {
-        "id": item["id"],
-        "title": item.get("title", ""),
-        "voice": voice,
-        "rate": rate,
-        "pitch": pitch,
-        "dur": dur,
-        "hdr": hdr,
-        "bodyCues": body_count,
-        "v": hashlib.md5(audio).hexdigest()[:8],
-        "cues": cues,
-    }
+        return {
+            "id": item["id"],
+            "title": item.get("title", ""),
+            "voice": voice,
+            "rate": rate,
+            "pitch": pitch,
+            "dur": dur,
+            "hdr": hdr,
+            "bodyCues": body_count,
+            "v": hashlib.md5(audio).hexdigest()[:8],
+            "cues": cues,
+        }
 
 
 async def run(args):
