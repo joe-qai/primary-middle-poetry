@@ -1,6 +1,6 @@
 /* 墨韵 · 内容数据
    由构建脚本生成，请勿手工编辑字段结构 */
-window.POETRY_DATA = {
+window.POETRY_DATA =  {
   "poems": [
   {
     "id": "p001",
@@ -7140,6 +7140,8 @@ window.POETRY_DATA = {
 };
 
 /* 重点考试诗句 */
+
+
 window.POETRY_KEY_LINES =    {
   "p001": [
     "曲项向天歌",
