@@ -1218,9 +1218,14 @@
         stopAudio();
         speechActive = false;
         updateSpeakBtn();
-        // 仅在有非女声的语音引擎时才切换为系统朗读，否则放弃（避免输出女声）
-        const hasMaleVoice = pickZhVoice() !== null;
-        if (hasMaleVoice) {
+        // 严格检查：只有真正存在男声引擎时才降级，否则放弃（避免输出女声）
+        const list = synth ? synth.getVoices() : [];
+        const zh = list.filter(v => /^zh/i.test(v.lang || ''));
+        const males = zh.filter(v => {
+          const n = v.name || '';
+          return MALE_VOICE_RE.test(n) && !FEMALE_VOICE_RE.test(n);
+        });
+        if (males.length > 0) {
           speakTip('音频无法播放，已切换为系统语音');
           startSpeech(item);
         } else {
