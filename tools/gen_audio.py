@@ -49,6 +49,108 @@ DEFAULT_RATE = "-10%"
 PROSE_KINDS = {"prose", "story", "classics"}
 # 句末标点：edge-tts 的 SentenceBoundary 只在 。！？!? 处断句
 SENT_END = "。！？!?"
+# 句中分隔标点后需要插入停顿——单独合成确保有准确时间戳
+SENT_SPLIT = "，；"
+
+
+def _pause_at(line):
+    """根据诗句字数返回[PAUSE]应插入的位置（从行首算起）。
+
+    五言：位置2（「二/三」节奏）
+    七言：位置4（「四/三」节奏）
+    八言含逗号：逗号后（让逗号本身成为天然停顿点，不在中间切断）
+    其他情况：按标准规则
+    """
+    import re
+    # 如果包含中文逗号/分号，优先在标点后切分（保留逗号作为语义分隔）
+    comma_pos = line.find('，')
+    semi_pos = line.find('；')
+    if comma_pos != -1 and comma_pos < len(line) - 1:
+        # 逗号/分号前插入停顿（逗号是自然断点，不需要额外PAUSE标记）
+        return comma_pos
+    if semi_pos != -1 and semi_pos < len(line) - 1:
+        return semi_pos
+    ch_count = len(line)
+    if ch_count == 5:
+        return 2
+    elif ch_count == 7:
+        return 4
+    elif ch_count == 8:
+        return 4
+    elif ch_count == 4:
+        return 2
+    elif 9 <= ch_count <= 12:
+        return 4
+    elif ch_count > 12:
+        return 4
+    return None
+
+
+def pause_in_poem_lines(text):
+    """为诗词类每行按意义单元插入 [PAUSE] 标记，供 speak_segmented 分段合成时使用。
+
+    处理策略：
+    - 不含句末标点（。！？）的行：按诗句字数插入 [PAUSE]
+    - 含逗號/分號的行：先拆分語義段，每段再按字数规则插 PAUSE，最后拼回原行格式
+    - 含句末标点的完整句子（如「丞相祠堂何处寻？锦官城外柏森森。」）：不插 PAUSE
+      （edge-tts SentenceBoundary 已在此处自然断句）
+
+    示例：
+      "出师未捷身先死，长使英雄泪满襟。"
+        → 第一段"出师未捷身先死"（7字）→ "出师未捷[PAUSE]身先死"
+        → 第二段"长使英雄泪满襟。"（含句末标点）→ 原样
+        → 结果："出师未捷[PAUSE]身先死，长使英雄泪满襟。"
+    """
+    SENT_END = set("。！？!?")
+    lines = text.splitlines()
+    out = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            out.append(line)
+            continue
+        # 含逗號 / 分號的行：拆分後分别處理
+        if '，' in stripped or '；' in stripped:
+            import re
+            parts = re.split(r'([，；])', stripped)
+            segs = []
+            i = 0
+            while i < len(parts):
+                seg = parts[i].strip()
+                sep = parts[i + 1] if i + 1 < len(parts) else ''
+                if seg:
+                    segs.append((seg, sep))
+                i += 2
+            processed = []
+            for seg_text, seg_sep in segs:
+                ends_with_sent = seg_text[-1] in SENT_END if seg_text else False
+                if ends_with_sent:
+                    processed.append(seg_text + seg_sep)
+                    continue
+                pos = _pause_at(seg_text)
+                if pos is None:
+                    processed.append(seg_text + seg_sep)
+                    continue
+                pauseline = seg_text[:pos] + '[PAUSE]' + seg_text[pos:]
+                processed.append(pauseline + seg_sep)
+            # 保持原行缩进
+            prefix = line[:len(line) - len(stripped)]
+            reconstructed = ''.join(processed)
+            out.append(prefix + reconstructed)
+        else:
+            # 无逗号的分号行，直接判断
+            ends_with_sent = stripped and stripped[-1] in SENT_END
+            if ends_with_sent:
+                out.append(line)
+                continue
+            pos = _pause_at(stripped)
+            if pos is None:
+                out.append(line)
+                continue
+            prefix = line[:len(line) - len(stripped)]
+            new_stripped = stripped[:pos] + '[PAUSE]' + stripped[pos:]
+            out.append(prefix + new_stripped)
+    return '\n'.join(out)
 
 DYN_SINGLE = set("唐宋元明清汉秦晋隋魏")
 NOISE_CHARS = "《》〈〉「」『』“”‘’()（）[]【】"
@@ -599,6 +701,73 @@ async def speak_words(text, voice, rate, pitch="+0Hz", retries=3):
     raise RuntimeError(f"合成失败：{last_err}")
 
 
+async def speak_segmented(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
+    """按逗号/分号分段合成，每段单独获取 SentenceBoundary，合并后返回完整音频与 cues。
+    同时处理 [PAUSE] 标记：在停顿处插入静音，确保诗词内部有意义单元的准确时间戳。"""
+    last_err = None
+    for attempt in range(1, retries + 1):
+        try:
+            # 先处理 [PAUSE] 标记（诗词内部的节奏停顿）——拆成独立片段
+            has_pause_marker = '[PAUSE]' in text
+            if has_pause_marker:
+                # 拆分后保留每个片段及其后的逗号/分号后缀
+                raw_parts = text.split('[PAUSE]')
+                segments = []
+                i = 0
+                while i < len(raw_parts):
+                    seg = raw_parts[i].strip()
+                    if not seg:
+                        i += 1
+                        continue
+                    # 下一部分以逗号/分号开头 → 把它归到本段的后缀
+                    suffix = ''
+                    if i + 1 < len(raw_parts):
+                        nxt = raw_parts[i + 1]
+                        m = re.match(r'^([，；]+)', nxt)
+                        if m:
+                            suffix = m.group(1)
+                    segments.append((seg, suffix))
+                    i += 1
+            else:
+                # 正常按逗号/分号分割（保留分隔符以便还原）
+                parts = re.split(r'([，；])', text)
+                segments = []
+                i = 0
+                while i < len(parts):
+                    seg = parts[i].strip()
+                    sep = parts[i + 1] if i + 1 < len(parts) else ''
+                    if seg:
+                        segments.append((seg, sep))
+                    i += 2
+            if not segments:
+                raise RuntimeError("empty segments")
+
+            all_audio = bytearray()
+            all_cues = []
+            offset = 0.0
+            PAUSE_MS = 300  # 逗号/分号/[PAUSE]后的固定停顿（毫秒）→ 0.3s
+
+            for si, (seg_text, seg_sep) in enumerate(segments):
+                inner = seg_text.rstrip('，；')  # 去除末尾逗号和分号（它们已被当作后缀单独保存）
+                seg_text_clean = tts_pronounce(inner)
+                seg_audio, seg_cues = await speak(seg_text_clean, voice, rate, pitch, volume, retries)
+                seg_dur = sum(c["t"] + c["d"] for c in seg_cues) if seg_cues else 0.0
+                all_audio.extend(seg_audio)
+                for c in seg_cues:
+                    all_cues.append({"t": round(offset + c["t"], 3),
+                                     "d": c["d"],
+                                     "s": restore_pronounce(c["s"])})
+                offset += seg_dur + PAUSE_MS / 1000.0
+
+            total = offset
+            return bytes(all_audio), all_cues, total
+        except Exception as exc:  # noqa: BLE001
+            last_err = exc
+            if attempt < retries:
+                await asyncio.sleep(1.5 * attempt)
+    raise RuntimeError(f"分段合成失败：{last_err}")
+
+
 def _first_syllable(x, thresh=0.28, hold=3, pad=0.012):
     """切出一段语音的第一个音节：首峰之后能量跌到峰值 28% 并保持 15ms 处收尾。
 
@@ -772,11 +941,32 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
     text, hdr, body_count = compose(item, join_header=join)
     if not text:
         raise ValueError("empty text")
-    audio, cues = await speak(text, voice, rate, pitch)
-    out_mp3.write_bytes(audio)
-    if join and hdr > 1 and cues:
-        cues = split_header_cue(audio, cues[0]) + cues[1:]
-    dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
+    # 对诗词类（含逗号/分号，或5/7字古体句）使用分段合成，确保每小句有准确时间戳
+    is_poem = item["_kind"] not in PROSE_KINDS
+    body_text_for_check = pause_before_er(tts_clean(body_text(item)))
+    has_comma_semicolon = any(ch in body_text_for_check for ch in '，；')
+    if is_poem and (has_comma_semicolon or any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())):
+        # 在诗词行内插入 [PAUSE] 标记，确保五言「二/三」七言「四/三」节奏正确
+        body_with_pauses = pause_in_poem_lines(body_text_for_check)
+        audio, cues, total = await speak_segmented(body_with_pauses, voice, rate, pitch)
+        # 合并 header cues（从完整文本合成）
+        header_parts = [x for x in (tts_clean(item.get("title")),
+                                     "，".join(x for x in (dynasty_text(item.get("dynasty")),
+                                                           tts_clean(item.get("author"))) if x)) if x]
+        header_text = "\n".join(header_parts)
+        h_audio, h_cues = await speak(header_text, voice, rate)
+        out_mp3.write_bytes(h_audio + audio)
+        offset = round(sum(c["t"] + c["d"] for c in h_cues), 3) if h_cues else 0.0
+        for c in cues:
+            c["t"] = round(c["t"] + offset, 3)
+        cues = h_cues + cues
+        dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
+    else:
+        audio, cues = await speak(text, voice, rate, pitch)
+        out_mp3.write_bytes(audio)
+        if join and hdr > 1 and cues:
+            cues = split_header_cue(audio, cues[0]) + cues[1:]
+        dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
     return {
         "id": item["id"],
         "title": item.get("title", ""),
