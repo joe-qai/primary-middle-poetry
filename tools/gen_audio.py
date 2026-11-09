@@ -711,33 +711,35 @@ async def speak_words(text, voice, rate, pitch="+0Hz", retries=3):
 
 
 async def speak_segmented(text, voice, rate, pitch="+0Hz", volume="+0%", retries=3):
-    """按逗号/分号分段合成，每段单独获取 SentenceBoundary，合并后返回完整音频与 cues。
-    只按中文逗号/分号切分（不按[PAUSE]），段间短停0.15s，保持朗诵流畅感。"""
+    """按句末标点（。！？）分段合成，段间短停0.12s，保证朗诵流畅感。
+    逗号/分号不强制切分，由TTS自然处理韵律。"""
     last_err = None
     for attempt in range(1, retries + 1):
         try:
-            # 只按逗号/分号分割，不在内部插入PAUSE标记
-            parts = re.split(r'([，；])', text)
+            # 只按句末标点分割，保持整句完整性
+            SENT_END = set('。！？!?')
             segments = []
-            i = 0
-            while i < len(parts):
-                seg = parts[i].strip()
-                sep = parts[i + 1] if i + 1 < len(parts) else ''
-                if seg:
-                    segments.append((seg, sep))
-                i += 2
+            buf = ''
+            for ch in text:
+                buf += ch
+                if ch in SENT_END:
+                    if buf.strip():
+                        segments.append(buf.strip())
+                    buf = ''
+            if buf.strip():
+                segments.append(buf.strip())
+
             if not segments:
                 raise RuntimeError("empty segments")
 
             all_audio = bytearray()
             all_cues = []
             offset = 0.0
-            PAUSE_MS = 150  # 逗号/分号后的停顿（毫秒）→ 0.15s，保持流畅
+            PAUSE_MS = 120  # 句末停顿120ms
 
-            for si, (seg_text, seg_sep) in enumerate(segments):
-                inner = seg_text.rstrip('，；')
-                seg_text_clean = tts_pronounce(inner)
-                seg_audio, seg_cues = await speak(seg_text_clean, voice, rate, pitch, volume, retries)
+            for seg_text in segments:
+                seg_clean = tts_pronounce(seg_text)
+                seg_audio, seg_cues = await speak(seg_clean, voice, rate, pitch, volume, retries)
                 seg_dur = sum(c["t"] + c["d"] for c in seg_cues) if seg_cues else 0.0
                 all_audio.extend(seg_audio)
                 for c in seg_cues:
