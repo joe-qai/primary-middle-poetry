@@ -3,6 +3,7 @@
  "title": "生于忧患，死于安乐",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 46.667,
  "hdr": 2,
  "bodyCues": 5,

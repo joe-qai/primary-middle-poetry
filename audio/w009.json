@@ -3,6 +3,7 @@
  "title": "岳阳楼记",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 121.722,
  "hdr": 2,
  "bodyCues": 22,

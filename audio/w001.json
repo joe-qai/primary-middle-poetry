@@ -3,6 +3,7 @@
  "title": "陋室铭",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 32.444,
  "hdr": 2,
  "bodyCues": 9,

@@ -3,6 +3,7 @@
  "title": "秋声赋",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 135.153,
  "hdr": 2,
  "bodyCues": 23,

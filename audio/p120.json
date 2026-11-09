@@ -3,6 +3,7 @@
  "title": "行路难（其一）",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 30.222,
  "hdr": 2,
  "bodyCues": 6,

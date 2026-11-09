@@ -3,6 +3,7 @@
  "title": "掩耳盗铃",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 28.222,
  "hdr": 2,
  "bodyCues": 3,

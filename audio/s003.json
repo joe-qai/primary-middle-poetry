@@ -3,6 +3,7 @@
  "title": "囊萤映雪",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 33.041,
  "hdr": 2,
  "bodyCues": 5,

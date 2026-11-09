@@ -3,6 +3,7 @@
  "title": "负荆请罪",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 49.917,
  "hdr": 2,
  "bodyCues": 8,

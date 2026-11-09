@@ -3,6 +3,7 @@
  "title": "曹刿论战",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 90.083,
  "hdr": 2,
  "bodyCues": 30,

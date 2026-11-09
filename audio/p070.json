@@ -3,6 +3,7 @@
  "title": "村晚",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 12.0,
  "hdr": 2,
  "bodyCues": 2,

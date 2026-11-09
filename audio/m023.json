@@ -3,6 +3,7 @@
  "title": "关雎",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 32.736,
  "hdr": 2,
  "bodyCues": 10,

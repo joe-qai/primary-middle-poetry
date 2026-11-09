@@ -3,6 +3,7 @@
  "title": "古朗月行",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 32.264,
  "hdr": 2,
  "bodyCues": 9,

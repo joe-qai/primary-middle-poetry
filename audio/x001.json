@@ -3,6 +3,7 @@
  "title": "登高",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 21.208,
  "hdr": 2,
  "bodyCues": 4,

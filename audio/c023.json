@@ -3,6 +3,7 @@
  "title": "指南录后序",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 252.508,
  "hdr": 2,
  "bodyCues": 31,

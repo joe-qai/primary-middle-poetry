@@ -3,6 +3,7 @@
  "title": "渔家傲·秋思",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 24.014,
  "hdr": 2,
  "bodyCues": 4,

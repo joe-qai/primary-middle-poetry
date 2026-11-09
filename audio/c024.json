@@ -3,6 +3,7 @@
  "title": "病梅馆记",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 88.5,
  "hdr": 2,
  "bodyCues": 12,

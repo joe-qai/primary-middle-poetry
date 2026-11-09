@@ -3,6 +3,7 @@
  "title": "三衢道中",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 12.708,
  "hdr": 2,
  "bodyCues": 2,

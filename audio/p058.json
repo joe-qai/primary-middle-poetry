@@ -3,6 +3,7 @@
  "title": "芙蓉楼送辛渐",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 13.778,
  "hdr": 2,
  "bodyCues": 2,

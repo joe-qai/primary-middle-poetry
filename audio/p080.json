@@ -3,6 +3,7 @@
  "title": "清平乐·春归何处",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 21.07,
  "hdr": 2,
  "bodyCues": 6,

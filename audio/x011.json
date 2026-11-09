@@ -3,6 +3,7 @@
  "title": "短歌行",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 50.959,
  "hdr": 2,
  "bodyCues": 17,

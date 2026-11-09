@@ -3,6 +3,7 @@
  "title": "游褒禅山记",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 162.597,
  "hdr": 2,
  "bodyCues": 26,

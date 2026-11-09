@@ -3,6 +3,7 @@
  "title": "浣溪沙·一曲新词酒一杯",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 19.125,
  "hdr": 2,
  "bodyCues": 4,

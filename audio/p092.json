@@ -3,6 +3,7 @@
  "title": "闻王昌龄左迁龙标遥有此寄",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 14.653,
  "hdr": 2,
  "bodyCues": 2,

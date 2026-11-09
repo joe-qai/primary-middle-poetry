@@ -3,6 +3,7 @@
  "title": "如梦令·常记溪亭日暮",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 17.459,
  "hdr": 2,
  "bodyCues": 3,

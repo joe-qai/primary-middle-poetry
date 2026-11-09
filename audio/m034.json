@@ -3,6 +3,7 @@
  "title": "太常引·建康中秋夜为吕叔潜赋",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 23.903,
  "hdr": 2,
  "bodyCues": 4,

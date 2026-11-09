@@ -1218,8 +1218,14 @@
         stopAudio();
         speechActive = false;
         updateSpeakBtn();
-        speakTip('音频无法播放，已切换为系统语音');
-        startSpeech(item);
+        // 仅在有非女声的语音引擎时才切换为系统朗读，否则放弃（避免输出女声）
+        const hasMaleVoice = pickZhVoice() !== null;
+        if (hasMaleVoice) {
+          speakTip('音频无法播放，已切换为系统语音');
+          startSpeech(item);
+        } else {
+          speakTip('当前设备暂无合适语音引擎，该篇暂无法朗读');
+        }
       });
     }
     return true;
@@ -1247,8 +1253,9 @@
     if (!t) return '';
     return DYN_SINGLE.test(t) ? t + '代' : t;
   }
-  const MALE_VOICE_RE = /(yunxi|yunjian|yunyang|yunfeng|yunhao|yunjie|yunze|yunye|kangkang|liang|male|男)/i;
-  const FEMALE_VOICE_RE = /(xiaoxiao|xiaoyi|xiaomo|xiaoqiu|xiaoxuan|xiaohan|xiaoshuang|yunxia|huihui|yaoyao|female|女)/i;
+  const MALE_VOICE_RE = /(yunxi|yunjian|yunyang|yunfeng|yunhao|yunjie|yunze|yunye|kangkang|liang|male|男|yun|yunxi|cloud)/i;
+  // 严格禁用列表：命中任一关键词即排除（即使同时含male也无济于事）
+  const FEMALE_VOICE_RE = /(xiaoxiao|xiaoyi|xiaomo|xiaoqiu|xiaoxuan|xiaohan|xiaoshuang|xiaoshu|xiaoyou|xiaoya|xiaoni|xiaoling|yunya|female|女|lili|naNa|na-nan)/i;
 
   // 优先选中文男声，其次任意中文语音；找不到男声时用较低音高近似
   function pickZhVoice() {
@@ -1257,14 +1264,20 @@
     const list = synth.getVoices() || [];
     const zh = list.filter(v => /^zh/i.test(v.lang || ''));
     if (!zh.length) return null;
-    const males = zh.filter(v => MALE_VOICE_RE.test(v.name || '') && !FEMALE_VOICE_RE.test(v.name || ''));
+    // 优先：明确的中文男声（Edge TTS / Android 自带）
+    const males = zh.filter(v => {
+      const n = v.name || '';
+      return MALE_VOICE_RE.test(n) && !FEMALE_VOICE_RE.test(n);
+    });
     if (males.length) {
       speechMale = true;
       speechVoice = males.find(v => /natural|online|neural/i.test(v.name || '')) || males[0];
       return speechVoice;
     }
+    // 兜底：选任意中文语音，但**刻意跳过已知女声**；找不到男声时再退而求其次
+    const nonFemaleZh = zh.filter(v => !FEMALE_VOICE_RE.test(v.name || ''));
+    speechVoice = nonFemaleZh.length ? nonFemaleZh[0] : zh[0];
     speechMale = false;
-    speechVoice = zh.find(v => /zh[-_]CN/i.test(v.lang || '')) || zh[0];
     return speechVoice;
   }
   if (synth && typeof synth.addEventListener === 'function') {
@@ -1337,7 +1350,8 @@
     if (v) u.voice = v;
     u.lang = (v && v.lang) || 'zh-CN';
     // 抑扬顿挫：句读不同，语速与音高跟着变；重点句再放慢半拍
-    let rate = 0.9, pitch = speechMale ? 0.95 : 0.8;
+    // 非男声时进一步降 pitch，使近似低沉稳重的听感
+    let rate = 0.9, pitch = speechMale ? 0.95 : 0.72;
     if (chunk.mood === 'ask') { rate = 0.86; pitch += 0.11; }
     else if (chunk.mood === 'excl') { rate = 0.88; pitch += 0.07; }
     else if (chunk.mood === 'mid') { rate = 0.92; pitch -= 0.03; }

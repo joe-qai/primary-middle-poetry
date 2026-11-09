@@ -3,6 +3,7 @@
  "title": "念奴娇·赤壁怀古",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 39.403,
  "hdr": 2,
  "bodyCues": 8,

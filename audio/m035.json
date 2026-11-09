@@ -3,6 +3,7 @@
  "title": "浣溪沙·身向云山那畔行",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 19.556,
  "hdr": 2,
  "bodyCues": 3,

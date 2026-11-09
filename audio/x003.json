@@ -3,6 +3,7 @@
  "title": "声声慢·寻寻觅觅",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 38.652,
  "hdr": 2,
  "bodyCues": 9,

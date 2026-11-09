@@ -3,6 +3,7 @@
  "title": "爱莲说",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 43.209,
  "hdr": 2,
  "bodyCues": 9,

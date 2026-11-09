@@ -3,6 +3,7 @@
  "title": "朝天子·咏喇叭",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 23.709,
  "hdr": 2,
  "bodyCues": 5,

@@ -3,6 +3,7 @@
  "title": "刻舟求剑",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 28.987,
  "hdr": 2,
  "bodyCues": 4,

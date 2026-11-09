@@ -3,6 +3,7 @@
  "title": "龟虽寿",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 24.181,
  "hdr": 2,
  "bodyCues": 7,

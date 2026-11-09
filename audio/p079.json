@@ -3,6 +3,7 @@
  "title": "浣溪沙·游蕲水清泉寺",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 19.083,
  "hdr": 2,
  "bodyCues": 4,

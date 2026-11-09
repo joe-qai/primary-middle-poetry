@@ -3,6 +3,7 @@
  "title": "渡荆门送别",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 17.944,
  "hdr": 2,
  "bodyCues": 4,

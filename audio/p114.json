@@ -3,6 +3,7 @@
  "title": "过零丁洋",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 22.958,
  "hdr": 2,
  "bodyCues": 5,

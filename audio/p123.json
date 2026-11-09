@@ -3,6 +3,7 @@
  "title": "渔家傲·天接云涛连晓雾",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 25.93,
  "hdr": 2,
  "bodyCues": 6,

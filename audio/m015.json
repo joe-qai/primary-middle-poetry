@@ -3,6 +3,7 @@
  "title": "梁甫行",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 17.416,
  "hdr": 2,
  "bodyCues": 4,

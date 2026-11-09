@@ -3,6 +3,7 @@
  "title": "江南逢李龟年",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 13.403,
  "hdr": 2,
  "bodyCues": 2,

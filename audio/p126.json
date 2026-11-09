@@ -3,6 +3,7 @@
  "title": "定风波·莫听穿林打叶声",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 37.097,
  "hdr": 2,
  "bodyCues": 7,

@@ -3,6 +3,7 @@
  "title": "绝句",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 12.5,
  "hdr": 2,
  "bodyCues": 2,

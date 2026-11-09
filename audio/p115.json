@@ -3,6 +3,7 @@
  "title": "水调歌头·明月几时有",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 42.959,
  "hdr": 2,
  "bodyCues": 10,

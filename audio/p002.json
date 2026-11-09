@@ -3,6 +3,7 @@
  "title": "江南",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 15.778,
  "hdr": 2,
  "bodyCues": 4,

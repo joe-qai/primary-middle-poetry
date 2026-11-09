@@ -3,6 +3,7 @@
  "title": "夜书所见",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 13.139,
  "hdr": 2,
  "bodyCues": 2,

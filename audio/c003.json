@@ -3,6 +3,7 @@
  "title": "滕王阁序",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 260.5,
  "hdr": 2,
  "bodyCues": 58,

@@ -3,6 +3,7 @@
  "title": "报任安书",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 728.927,
  "hdr": 2,
  "bodyCues": 111,

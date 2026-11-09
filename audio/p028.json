@@ -3,6 +3,7 @@
  "title": "饮湖上初晴后雨",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 13.681,
  "hdr": 2,
  "bodyCues": 2,

@@ -3,6 +3,7 @@
  "title": "凿壁偷光",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 44.611,
  "hdr": 2,
  "bodyCues": 9,

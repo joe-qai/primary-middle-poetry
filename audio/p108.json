@@ -3,6 +3,7 @@
  "title": "晚春",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 12.347,
  "hdr": 2,
  "bodyCues": 2,

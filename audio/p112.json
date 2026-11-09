@@ -3,6 +3,7 @@
  "title": "酬乐天扬州初逢席上见赠",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 23.167,
  "hdr": 2,
  "bodyCues": 4,

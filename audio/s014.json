@@ -3,6 +3,7 @@
  "title": "夸父逐日",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 59.737,
  "hdr": 2,
  "bodyCues": 8,

@@ -3,6 +3,7 @@
  "title": "核舟记",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 140.416,
  "hdr": 2,
  "bodyCues": 24,

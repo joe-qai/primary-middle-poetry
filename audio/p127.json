@@ -3,6 +3,7 @@
  "title": "无题·相见时难别亦难",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 23.652,
  "hdr": 2,
  "bodyCues": 4,

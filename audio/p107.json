@@ -3,6 +3,7 @@
  "title": "逢入京使",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 13.222,
  "hdr": 2,
  "bodyCues": 2,

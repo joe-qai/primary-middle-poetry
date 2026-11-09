@@ -3,6 +3,7 @@
  "title": "桃花源记",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 112.57,
  "hdr": 2,
  "bodyCues": 28,

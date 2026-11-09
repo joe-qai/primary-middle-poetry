@@ -3,6 +3,7 @@
  "title": "丑奴儿·书博山道中壁",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 19.986,
  "hdr": 2,
  "bodyCues": 4,

@@ -3,6 +3,7 @@
  "title": "三顾茅庐",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 36.5,
  "hdr": 2,
  "bodyCues": 5,

@@ -3,6 +3,7 @@
  "title": "韦编三绝",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 22.139,
  "hdr": 2,
  "bodyCues": 2,

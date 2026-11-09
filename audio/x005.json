@@ -3,6 +3,7 @@
  "title": "虞美人·春花秋月何时了",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 23.444,
  "hdr": 2,
  "bodyCues": 6,

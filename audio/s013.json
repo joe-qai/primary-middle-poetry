@@ -3,6 +3,7 @@
  "title": "精卫填海",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 67.431,
  "hdr": 2,
  "bodyCues": 9,

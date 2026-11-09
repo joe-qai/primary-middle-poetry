@@ -3,6 +3,7 @@
  "title": "卜算子·送鲍浩然之浙东",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 20.639,
  "hdr": 2,
  "bodyCues": 5,

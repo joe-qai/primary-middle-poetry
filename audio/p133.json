@@ -3,6 +3,7 @@
  "title": "行香子·树绕村庄",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 29.666,
  "hdr": 2,
  "bodyCues": 8,

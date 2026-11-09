@@ -3,6 +3,7 @@
  "title": "天净沙·秋思",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 14.778,
  "hdr": 2,
  "bodyCues": 4,

@@ -3,6 +3,7 @@
  "title": "悬梁刺股",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 43.139,
  "hdr": 2,
  "bodyCues": 6,

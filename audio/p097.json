@@ -3,6 +3,7 @@
  "title": "登幽州台歌",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 11.806,
  "hdr": 2,
  "bodyCues": 2,

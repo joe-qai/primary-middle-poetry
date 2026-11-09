@@ -3,6 +3,7 @@
  "title": "醉花阴·薄雾浓云愁永昼",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 23.166,
  "hdr": 2,
  "bodyCues": 4,

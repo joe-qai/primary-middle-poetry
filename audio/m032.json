@@ -3,6 +3,7 @@
  "title": "十五从军征",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 31.736,
  "hdr": 2,
  "bodyCues": 8,

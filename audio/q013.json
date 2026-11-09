@@ -3,6 +3,7 @@
  "title": "六月二十七日望湖楼醉书",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 13.889,
  "hdr": 2,
  "bodyCues": 2,

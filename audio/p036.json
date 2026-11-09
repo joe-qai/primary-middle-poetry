@@ -3,6 +3,7 @@
  "title": "滁州西涧",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 12.667,
  "hdr": 2,
  "bodyCues": 2,

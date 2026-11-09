@@ -3,6 +3,7 @@
  "title": "雁门太守行",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 21.722,
  "hdr": 2,
  "bodyCues": 4,

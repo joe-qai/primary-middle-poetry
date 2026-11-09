@@ -3,6 +3,7 @@
  "title": "孟母三迁",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 44.5,
  "hdr": 2,
  "bodyCues": 9,

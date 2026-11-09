@@ -3,6 +3,7 @@
  "title": "项脊轩志",
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
+ "pitch": "+0Hz",
  "dur": 180.639,
  "hdr": 2,
  "bodyCues": 35,
