@@ -1640,9 +1640,9 @@
     { id:"g001", name:"三曹", dynasty:"汉魏",
       desc:"曹操、曹丕、曹植，父子三人均以诗名著称，开创建安风骨。",
       members:[
-        {name:"曹操",items:["p099","p103","p117"]},
+        {name:"曹操",items:["p091","m013","x011"]},
         {name:"曹丕",items:["p191","p192"]},
-        {name:"曹植",items:["p056","p100"]}
+        {name:"曹植",items:["m015","c002"]}
       ]},
     { id:"g002", name:"建安七子", dynasty:"汉末",
       desc:"孔融、陈琳、王粲、徐干、阮瑀、应玚、刘桢，建安文学骨干群体。本馆收录其存世作品。",
@@ -1735,7 +1735,18 @@
     });
   }
 
+  // 记录从哪个面板进入了诗人组合详情
+  let _groupEntryPanel = 'groups';
+
+  function goBackFromGroup() {
+    // 直接重新渲染组列表，避免状态混乱
+    renderGroups();
+    switchPanel('groups');
+  }
+
   function showGroupDetail(gid) {
+    // 记录进入详情前的面板，用于返回
+    _groupEntryPanel = currentPanel || 'groups';
     const g = GROUPS_DATA.find(x => x.id === gid);
     if (!g) return;
     const memberItems = [];
@@ -1752,7 +1763,7 @@
       (byAuthor[it._author] = byAuthor[it._author] || []).push(it);
     });
     let html = `
-      <button class="btn-back" onclick="switchPanel(currentPanel||'home')">← 返回</button>
+      <button class="btn-back" id="grpBackBtn">← 返回</button>
       <div class="sec-head j"><div class="glyph">${esc(g.name[0])}</div>
         <div><h2>${esc(g.name)}</h2><p>${esc(g.dynasty)} · ${g.members.length} 人 · ${memberItems.length} 篇</p></div>
       </div>
@@ -1766,7 +1777,7 @@
         const tag = it.tag ? `<span class="tag2">${esc(it.tag)}</span>` : "";
         const excerpt = plain(it.pinyin || it.content || it.summary || '').replace(/\s+/g,' ').trim().slice(0, 40);
         html += `<article class="card ${meta.cls}" tabindex="0" role="button"
-          data-id="${esc(it.id)}" onclick="openDetail('${esc(it.id)}')">
+          data-id="${esc(it.id)}">
           <div class="card-top">
             <span class="card-title">${esc(it.title)}</span> ${grade}${tag}
           </div>
@@ -1781,6 +1792,12 @@
     host.classList.add("on");
     $$(".panel").forEach(p => { if (p.id !== "panel-groups") p.classList.remove("on"); });
     switchPanel("groups");
+    // 绑定返回按钮和卡片点击（避免 inline onclick 访问不到 IIFE 内部函数）
+    const backBtn = host.querySelector('#grpBackBtn');
+    if (backBtn) backBtn.addEventListener('click', goBackFromGroup);
+    host.querySelectorAll('.member-block .card').forEach(card => {
+      card.addEventListener('click', () => openDetail(card.dataset.id));
+    });
   }
 
 function renderProgress() {
