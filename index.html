@@ -814,10 +814,27 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
    // 把一句按逗号切成小段：窄屏放不下整联时整段换行，避免最后几个字单独掉行
-   // <wbr> 标记的语义断句点不受影响，保留供浏览器折行参考
    function segWrap(html) {
      const body = String(html || '').replace(/([，；、：])/g, '$1</span><span class="seg">');
      return `<span class="seg">${body}</span>`;
+   }
+   // 按诗句自然节奏切小段，用于窄屏宽度测量（不插入 wbr 标签到数据里）
+   const RHYTHM_7 = [2, 4, 5, 7];   // 七言断点位置（字符数）
+   const RHYTHM_5 = [2, 3, 5];      // 五言断点位置
+   function poeticChunks(text) {
+     const len = text.replace(/[，；、：！？!?]/g, '').length;
+     const pattern = len === 5 ? RHYTHM_5 : RHYTHM_7;
+     if (!pattern.length) return [text];
+     const out = [];
+     let from = 0;
+     for (const pos of pattern) {
+       if (pos >= text.length) continue;
+       const end = text.indexOf(/[，；、：！？!?]/, pos);
+       out.push(text.slice(from, end < 0 ? pos + 1 : Math.min(end + 1, pos + 1)));
+       from = end < 0 ? pos : end + 1;
+     }
+     if (from < text.length) out.push(text.slice(from));
+     return out.filter(Boolean);
    }
   function plain(text) { return String(text || '').replace(/\{([^}]*)\}/g, ''); }
 
@@ -927,11 +944,31 @@
         const segMax = Math.max(...segs.map(segWidth));
         v = Math.min(v, Math.min(1, limit / segMax));
         if (limit / segMax < MIN) overflow = true;
-      } else {                                     // 没有可断的标点，只能尽量缩
-        v = Math.min(v, Math.max(MIN, need));
-        if (need < MIN) overflow = true;
-        oneLine.push(el);
-      }
+       } else {
+         // 没有逗号可断：按诗句节奏（五言二/三，七言二/二/三）拆虚拟小段测宽，
+         // 字体缩放到能放下最宽的小段即可，避免把短句撑得太小
+         const rawLine = el.textContent || '';
+         const chunks = poeticChunks(rawLine);
+         if (chunks.length > 1) {
+           const tmp = document.createElement('div');
+           tmp.style.cssText = 'position:absolute;visibility:hidden;font-size:16px;line-height:inherit;white-space:nowrap;padding:0;margin:0;';
+           host.appendChild(tmp);
+           let maxChunkW = 0;
+           for (const c of chunks) {
+             tmp.textContent = c;
+             maxChunkW = Math.max(maxChunkW, tmp.offsetWidth);
+           }
+           host.removeChild(tmp);
+           const need = Math.min(1, limit / maxChunkW);
+           v = Math.min(v, need);
+           if (limit / maxChunkW < MIN) overflow = true;
+           oneLine.push(el);
+         } else {
+           v = Math.min(v, Math.max(MIN, need));
+           if (need < MIN) overflow = true;
+           oneLine.push(el);
+         }
+       }
     }
     v = Math.max(MIN, v);
     set(v);
