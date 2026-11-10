@@ -813,11 +813,12 @@
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-  // 把一句按逗号切成小段：窄屏放不下整联时整段换行，避免最后几个字单独掉行
-  function segWrap(html) {
-    const body = String(html || '').replace(/([，；、：])/g, '$1</span><span class="seg">');
-    return `<span class="seg">${body}</span>`;
-  }
+   // 把一句按逗号切成小段：窄屏放不下整联时整段换行，避免最后几个字单独掉行
+   // <wbr> 标记的语义断句点不受影响，保留供浏览器折行参考
+   function segWrap(html) {
+     const body = String(html || '').replace(/([，；、：])/g, '$1</span><span class="seg">');
+     return `<span class="seg">${body}</span>`;
+   }
   function plain(text) { return String(text || '').replace(/\{([^}]*)\}/g, ''); }
 
   // ---- icon helpers ----
