@@ -814,35 +814,39 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
    // 把一句按逗号切成小段：窄屏放不下整联时整段换行，避免最后几个字单独掉行
+   // 额外：七言/五言无逗号句按二/二/三、二/三节奏插语义断点，使折行发生在正确位置
    function segWrap(html) {
-     const body = String(html || '').replace(/([，；、：])/g, '$1</span><span class="seg">');
+     const raw = String(html || '');
+     // 先找纯汉字序列（不含任何标点），有标点的走原有逻辑；无标点的按节奏切
+     const hasPunct = /[，；、：！？!?\n]/.test(raw);
+     if (!hasPunct) {
+       const hanCount = (raw.match(/[\u4e00-\u9fff]/g) || []).length;
+       if (hanCount === 5) {
+         // 五言 二/三，例："众鸟高飞尽" → ["众鸟", "高飞尽"]
+         return splitByRhythm(raw, [2]);
+       }
+       if (hanCount === 7) {
+         // 七言 二/二/三，例："无限风光尽被占" → ["无限", "风光", "尽被占"]
+         return splitByRhythm(raw, [2, 4]);
+       }
+     }
+     // 有标点或非标韵律句：按逗号切
+     const body = raw.replace(/([，；、：])/g, '$1</span><span class="seg">');
      return `<span class="seg">${body}</span>`;
    }
-   // 按诗句自然节奏切小段，用于窄屏宽度测量（不插入 wbr 标签到数据里）
-   // 七言标准节奏：二/二/三（不断点在末尾标点处）；五言：二/三
-   // 例："无限风光尽被占" → ["无限", "风光", "尽被占"]
-   const RHYTHM_7 = [2, 4];   // 七言在字符2、4后断（二/二/三）
-   const RHYTHM_5 = [2];      // 五言在字符2后断（二/三）
-   function poeticChunks(text) {
-     const len = text.replace(/[，；、：！？!?]/g, '').length;
-     // 先按逗号等切大块（处理联内多句的情况，如"不论平地与山尖，无限风光尽被占。"）
-     const rawSegments = text.split(/[，；、：！?\n\r]+/).filter(Boolean);
-     if (rawSegments.length > 1) {
-       return rawSegments.map(s => poeticChunks(s)).flat();
-     }
-     const pattern = len === 5 ? RHYTHM_5 : RHYTHM_7;
-     if (!pattern.length || !text.trim()) return [text];
-     const out = [];
+   // 在指定字符位置（相对汉字计数）之后断开，保持 ruby 标签完整
+   function splitByRhythm(raw, breakPositions) {
      let from = 0;
-     for (const pos of pattern) {
-       if (pos >= text.length) continue;
-       out.push(text.slice(from, pos));
+     const parts = [];
+     for (const pos of breakPositions) {
+       if (pos >= raw.length) continue;
+       parts.push(raw.slice(from, pos));
        from = pos;
      }
-     if (from < text.length) out.push(text.slice(from));
-     return out.filter(Boolean);
+     if (from < raw.length) parts.push(raw.slice(from));
+     return parts.map(p => `<span class="seg">${p}</span>`).join('');
    }
-  function plain(text) { return String(text || '').replace(/\{([^}]*)\}/g, ''); }
+   function plain(text) { return String(text || '').replace(/\{([^}]*)\}/g, ''); }
 
   // ---- icon helpers ----
   const KIND_META = {
@@ -946,35 +950,10 @@
       if (need >= PREFER) {                       // 缩一点就能排成一行
         v = Math.min(v, need);
         oneLine.push(el);
-      } else if (segs.length > 1) {               // 放不下：靠逗号断成多段
-        const segMax = Math.max(...segs.map(segWidth));
-        v = Math.min(v, Math.min(1, limit / segMax));
-        if (limit / segMax < MIN) overflow = true;
-       } else {
-         // 没有逗号可断：按诗句节奏（五言二/三，七言二/二/三）拆虚拟小段测宽，
-         // 字体缩放到能放下最宽的小段即可，避免把短句撑得太小
-         const rawLine = el.textContent || '';
-         const chunks = poeticChunks(rawLine);
-         if (chunks.length > 1) {
-           const tmp = document.createElement('div');
-           tmp.style.cssText = 'position:absolute;visibility:hidden;font-size:16px;line-height:inherit;white-space:nowrap;padding:0;margin:0;';
-           host.appendChild(tmp);
-           let maxChunkW = 0;
-           for (const c of chunks) {
-             tmp.textContent = c;
-             maxChunkW = Math.max(maxChunkW, tmp.offsetWidth);
-           }
-           host.removeChild(tmp);
-           const need = Math.min(1, limit / maxChunkW);
-           v = Math.min(v, need);
-           if (limit / maxChunkW < MIN) overflow = true;
-           oneLine.push(el);
-         } else {
-           v = Math.min(v, Math.max(MIN, need));
-           if (need < MIN) overflow = true;
-           oneLine.push(el);
-         }
-       }
+       } else if (segs.length > 1) {               // 放不下：靠逗逗或诗意节奏断成多段
+         const segMax = Math.max(...segs.map(segWidth));
+         v = Math.min(v, Math.min(1, limit / segMax));
+         if (limit / segMax < MIN) overflow = true;
     }
     v = Math.max(MIN, v);
     set(v);
