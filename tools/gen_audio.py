@@ -226,7 +226,8 @@ def is_prose_layout(item):
 def body_text(item):
     if is_prose_layout(item):
         return item.get("content") or item.get("pinyin") or item.get("original") or ""
-    return item.get("pinyin") or item.get("original") or item.get("content") or ""
+    # 优先使用 pinyin_audio（朗读优化版，含结构节奏断点），无则回退到普通 pinyin
+    return item.get("pinyin_audio") or item.get("pinyin") or item.get("original") or item.get("content") or ""
 
 
 def strip_ann(s):
