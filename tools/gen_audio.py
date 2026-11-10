@@ -972,7 +972,7 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
     has_comma_semicolon = any(ch in body_text_for_check for ch in '，；')
     if is_poem and (has_comma_semicolon or any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())):
         # 诗词类按逗号/分号分段合成，段间短停0.15s保持流畅朗诵感
-        audio, cues, total = await speak_segmented(pause_in_poem_lines(body_text_for_check), voice, rate, pitch)
+        audio, cues, total = await speak_segmented(body_text_for_check, voice, rate, pitch)
         # 合并 header cues（从完整文本合成）
         header_parts = [x for x in (tts_clean(item.get("title")),
                                      "，".join(x for x in (dynasty_text(item.get("dynasty")),
