@@ -409,6 +409,36 @@ def compose(item, join_header=False):
 
 AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 
+# edge-tts 输出是 24kHz / 48kbps / 单声道 CBR，字节数与时长严格成正比
+# （实测 6000.0 字节 = 1 秒）。用它换算时长比 SoundBoundary/WordBoundary 的
+# offset+duration 可靠：后者会略微高估，累积后会把最后一句 cue 推到音频末尾之后，
+# 表现为「最后一句没高亮」。
+MP3_BYTES_PER_SEC = 6000.0
+
+
+def mp3_dur(data: bytes) -> float:
+    """按 CBR 字节数换算 mp3 真实时长（秒）。"""
+    return len(data) / MP3_BYTES_PER_SEC
+
+
+def clamp_cues(cues, dur):
+    """把越界的 cue 收回到音频实际长度内。
+
+    - 起点已经超过音频末尾的 cue：并入前一句（它属于同一口气读出来的内容）
+    - 其余 cue 的时长裁到不越过音频结尾
+    """
+    out = []
+    for c in cues or []:
+        c = dict(c)
+        if out and c["t"] >= dur - 0.02:
+            prev = out[-1]
+            prev["d"] = round(max(prev["d"], dur - prev["t"]), 3)
+            continue
+        out.append(c)
+    for c in out:
+        c["d"] = round(max(0.03, min(c["d"], dur - c["t"])), 3)
+    return out
+
 # 重复单字开头的分句增强（音高 / 节奏）。
 #
 # 《咏鹅》开头三个「鹅」的问题：edge-tts 按「列举语调」会把每个「鹅」读成
@@ -729,24 +759,28 @@ async def speak_segmented(text, voice, rate, pitch="+0Hz", volume="+0%", retries
             if buf.strip():
                 segments.append(buf.strip())
 
+            # 纯标点段（如结尾的「……」）会让 edge-tts 返回空音频并报
+            # 「No audio was received」，直接丢掉
+            segments = [s for s in segments if re.search(r"[\u4e00-\u9fff0-9A-Za-z]", s)]
+
             if not segments:
                 raise RuntimeError("empty segments")
 
             all_audio = bytearray()
             all_cues = []
             offset = 0.0
-            PAUSE_MS = 120  # 句末停顿120ms
 
             for seg_text in segments:
                 seg_clean = tts_pronounce(seg_text)
                 seg_audio, seg_cues = await speak(seg_clean, voice, rate, pitch, volume, retries)
-                seg_dur = sum(c["t"] + c["d"] for c in seg_cues) if seg_cues else 0.0
-                all_audio.extend(seg_audio)
-                for c in seg_cues:
+                # 用真实字节长度换算本段时长（不再用 boundary 估算，避免累积漂移）
+                seg_dur = mp3_dur(seg_audio)
+                for c in clamp_cues(seg_cues, seg_dur):
                     all_cues.append({"t": round(offset + c["t"], 3),
                                      "d": c["d"],
                                      "s": restore_pronounce(c["s"])})
-                offset += seg_dur + PAUSE_MS / 1000.0
+                all_audio.extend(seg_audio)
+                offset += seg_dur
 
             total = offset
             return bytes(all_audio), all_cues, total
@@ -945,27 +979,14 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
         h_audio, h_cues = await speak(header_text, voice, rate)
         full_audio = h_audio + audio
         out_mp3.write_bytes(full_audio)
-        # 用实际音频时长校准最后一句 cue 的结束时间
-        import subprocess as _sp
-        with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as _tmp:
-            _tmp.write(full_audio)
-            _tmp_path = _tmp.name
-        try:
-            _r = _sp.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
-                          '-of', 'default=noprint_wrappers=1:nokey=1', _tmp_path],
-                         capture_output=True, text=True)
-            actual_dur = float(_r.stdout.strip())
-        finally:
-            os.unlink(_tmp_path)
-        offset = round(h_cues[-1]["t"] + h_cues[-1]["d"], 3) if h_cues else 0.0
-        for c in cues:
-            c["t"] = round(c["t"] + offset, 3)
-        cues = h_cues + cues
-        # 校准最后一句的结束时间到实际音频长度
-        if cues:
-            last = cues[-1]
-            last["d"] = round(max(0.05, actual_dur - last["t"]), 3)
-        dur = actual_dur
+        # 真实时长按字节数换算；header 占用的时长同样用字节数，避免与正文错位
+        dur = round(mp3_dur(full_audio), 3)
+        offset = round(mp3_dur(h_audio), 3)
+        h_final = clamp_cues(h_cues, dur)
+        b_final = clamp_cues([dict(c, t=round(c["t"] + offset, 3)) for c in cues], dur)
+        cues = h_final + b_final
+        hdr = len(h_final)
+        body_count = len(b_final)
         return {
             "id": item["id"],
             "title": item.get("title", ""),
@@ -983,7 +1004,10 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
         out_mp3.write_bytes(audio)
         if join and hdr > 1 and cues:
             cues = split_header_cue(audio, cues[0]) + cues[1:]
-        dur = round(max(c["t"] + c["d"] for c in cues), 3) if cues else 0.0
+        dur = round(mp3_dur(audio), 3)
+        cues = clamp_cues(cues, dur)
+        hdr = min(hdr, len(cues))
+        body_count = max(0, len(cues) - hdr)
         return {
             "id": item["id"],
             "title": item.get("title", ""),

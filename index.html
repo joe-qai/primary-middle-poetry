@@ -1001,14 +1001,14 @@
     if (isProseLayout(item)) return item.content || item.pinyin || item.original || '';
     return item.pinyin || item.original || item.content || '';
   }
-  // 句级切分：与 tools/gen_audio.py 的 split_sentences 保持一致（按行、句末标点）
+  // 句级切分：与 tools/gen_audio.py 的 speak_segmented 保持一致（按句末标点、分号切分）
   const SENT_END = '。！？!?';
   function splitRawSentences(raw) {
     const out = [];
     let buf = '';
     for (const ch of String(raw || '')) {
       buf += ch;
-      if (SENT_END.includes(ch)) {
+      if (SENT_END.includes(ch) || ch === '；' || ch === ';') {
         if (buf.trim()) out.push(buf);
         buf = '';
       }
@@ -1077,6 +1077,8 @@
   let audioIndex = null, audioIndexReq = null;
   let audioMode = false, audioCues = [], audioHdr = 0, audioHl = [];
   let audioCueIdx = -1, audioCuesId = null, lastHl = null;
+  // cue → DOM 句子 的映射（按文本对齐，避免两侧切句规则不一致导致错位）
+  let audioMap = null, audioMapKey = null, audioMapItem = null, lastHlGroup = [];
 
   function loadAudioIndex() {
     if (!audioIndexReq) {
@@ -1131,20 +1133,102 @@
       if (el) el.classList.remove('speaking');
     });
     lastHl = null;
+    lastHlGroup = [];
   }
-  function setSpeaking(el) {
-    if (lastHl === el) return;
-    if (lastHl) lastHl.classList.remove('speaking');
-    lastHl = el || null;
-    if (!lastHl) return;
-    lastHl.classList.add('speaking');
+  function setSpeakingGroup(els) {
+    const g = (els || []).filter(Boolean);
+    if (g.length === lastHlGroup.length && g.every((el, k) => el === lastHlGroup[k])) return;
+    lastHlGroup.forEach(el => el.classList.remove('speaking'));
+    lastHlGroup = g;
+    lastHl = g[0] || null;
+    if (!g.length) return;
+    g.forEach(el => el.classList.add('speaking'));
     const box = $('#sheetBody');
     if (!box) return;
-    const r = lastHl.getBoundingClientRect();
+    const r = g[0].getBoundingClientRect();
     const br = box.getBoundingClientRect();
     if (r.top < br.top + 8 || r.bottom > br.bottom - 8) {
-      lastHl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      g[0].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
+  }
+  function setSpeaking(el) { setSpeakingGroup(el ? [el] : []); }
+  // 音频 cue 与页面句子是两套切句规则产生的，数量不一定相同。
+  // 这里用 cue 原文（已还原成页面文字）在正文里反查位置，得到 cue → 句子 的映射，
+  // 因此即使数量对不上也能精确高亮（一句跨两 cue、两 cue 合一句都能处理）。
+  const HL_KEEP = /[\u4e00-\u9fff0-9A-Za-z]/;
+  function buildAudioMap(item) {
+    if (!audioCues.length || !audioHl.length) return null;
+    const body = bodyText(item);
+    if (!body) return null;
+    const segs = [];
+    for (const rawLine of String(body).split('\n')) {
+      for (const s of splitRawSentences(rawLine)) segs.push(s);
+    }
+    if (segs.length !== audioHl.length) return null;
+    const segA = [], segB = [];
+    let full = '';
+    for (const s of segs) { segA.push(full.length); full += s; segB.push(full.length); }
+    // 有效字符流（去 {注音}、去标点空白）+ 每个字符在 full 中的位置
+    let chars = '', pos = [];
+    for (let i = 0; i < full.length; i++) {
+      const ch = full[i];
+      if (ch === '{') { const e = full.indexOf('}', i); i = (e < 0 ? full.length : e); continue; }
+      if (HL_KEEP.test(ch)) { chars += ch; pos.push(i); }
+    }
+    const map = [];
+    let from = 0, lastEnd = 0;
+    for (const c of audioCues.slice(audioHdr)) {
+      let needle = '';
+      for (const ch of String((c && c.s) || '')) if (HL_KEEP.test(ch)) needle += ch;
+      let start = -1, len = 0;
+      if (needle) {
+        const p = chars.indexOf(needle, from);
+        if (p >= 0) { start = p; len = needle.length; }
+        else {
+          // 退一步：按最长前缀匹配（文本被清洗过时仍能定位）
+          for (let k = Math.min(needle.length, 12); k >= 4; k--) {
+            let q = chars.indexOf(needle.slice(0, k), from);
+            if (q < 0) q = chars.indexOf(needle.slice(0, k));
+            if (q >= 0) { start = q; len = k; break; }
+          }
+        }
+      }
+      if (start < 0) {
+        let j = segA.findIndex(x => x >= lastEnd);
+        if (j < 0) j = segs.length - 1;
+        map.push([j]);
+        continue;
+      }
+      const fs = pos[start];
+      const fe = (start + len - 1 < pos.length) ? pos[start + len - 1] + 1 : full.length;
+      const hit = [];
+      for (let k = 0; k < segs.length; k++) {
+        if (segB[k] > fs && segA[k] < fe) hit.push(k);
+      }
+      if (!hit.length) {
+        let j = segA.findIndex(x => x >= fs);
+        if (j < 0) j = segs.length - 1;
+        hit.push(j);
+      }
+      map.push(hit);
+      from = start + len;
+      lastEnd = fe;
+    }
+    // 标点单独成句的片段（「」、……）没有汉字，无法按文本定位，
+    // 并入相邻 cue，避免这些句子永远不高亮。
+    const covered = new Set();
+    map.forEach(h => h.forEach(k => covered.add(k)));
+    for (let k = 0; k < segs.length; k++) {
+      if (covered.has(k)) continue;
+      let ci = -1;
+      for (let c2 = map.length - 1; c2 >= 0 && ci < 0; c2--) if (map[c2].some(x => x < k)) ci = c2;
+      if (ci < 0) for (let c2 = 0; c2 < map.length && ci < 0; c2++) if (map[c2].some(x => x > k)) ci = c2;
+      if (ci < 0) continue;
+      map[ci].push(k);
+      map[ci].sort((a, b) => a - b);
+      covered.add(k);
+    }
+    return map;
   }
   function onAudioTime() {
     if (!audioMode || !audioCues.length) return;
@@ -1174,6 +1258,14 @@
     if (titleEl) titleEl.classList.remove('speaking');
     if (byEl) byEl.classList.remove('speaking');
     const bodyCues = audioCues.length - audioHdr;
+    if (audioMapKey !== audioCuesId) {
+      audioMapKey = audioCuesId;
+      audioMap = buildAudioMap(audioMapItem);
+    }
+    if (audioMap) {
+      const hit = audioMap[i - audioHdr];
+      if (hit && hit.length) { setSpeakingGroup(hit.map(k => audioHl[k])); return; }
+    }
     if (audioHl.length === bodyCues) {
       setSpeaking(audioHl[i - audioHdr] || null);
       return;
@@ -1191,6 +1283,9 @@
     audioCuesId = null;
     audioCues = [];
     audioCueIdx = -1;
+    audioMap = null;
+    audioMapKey = null;
+    audioMapItem = null;
     clearHighlight();
     if (!audioEl) return;
     try { audioEl.pause(); } catch (e) {}
@@ -1201,6 +1296,9 @@
     if (!audioEl) return false;
     audioMode = true;
     audioHl = collectHighlightEls();
+    audioMapItem = item;
+    audioMap = null;
+    audioMapKey = null;
     clearHighlight();
     audioCuesId = null;
     const ver = entry.v || '';
