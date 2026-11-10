@@ -1023,8 +1023,7 @@
   }
   function bodyText(item) {
     if (isProseLayout(item)) return item.content || item.pinyin || item.original || '';
-    // 有朗读增强版时优先使用，保证 buildAudioMap 分段数与实际音频一致
-    return item.pinyin_audio || item.pinyin || item.original || item.content || '';
+    return item.pinyin || item.original || item.content || '';
   }
   // 句级切分：与 tools/gen_audio.py 的 speak_segmented 保持一致（按句末标点、分号切分）
   const SENT_END = '。！？!?';
