@@ -819,19 +819,25 @@
      return `<span class="seg">${body}</span>`;
    }
    // 按诗句自然节奏切小段，用于窄屏宽度测量（不插入 wbr 标签到数据里）
-   const RHYTHM_7 = [2, 4, 5, 7];   // 七言断点位置（字符数）
-   const RHYTHM_5 = [2, 3, 5];      // 五言断点位置
+   // 七言标准节奏：二/二/三（不断点在末尾标点处）；五言：二/三
+   // 例："无限风光尽被占" → ["无限", "风光", "尽被占"]
+   const RHYTHM_7 = [2, 4];   // 七言在字符2、4后断（二/二/三）
+   const RHYTHM_5 = [2];      // 五言在字符2后断（二/三）
    function poeticChunks(text) {
      const len = text.replace(/[，；、：！？!?]/g, '').length;
+     // 先按逗号等切大块（处理联内多句的情况，如"不论平地与山尖，无限风光尽被占。"）
+     const rawSegments = text.split(/[，；、：！?\n\r]+/).filter(Boolean);
+     if (rawSegments.length > 1) {
+       return rawSegments.map(s => poeticChunks(s)).flat();
+     }
      const pattern = len === 5 ? RHYTHM_5 : RHYTHM_7;
-     if (!pattern.length) return [text];
+     if (!pattern.length || !text.trim()) return [text];
      const out = [];
      let from = 0;
      for (const pos of pattern) {
        if (pos >= text.length) continue;
-       const end = text.indexOf(/[，；、：！？!?]/, pos);
-       out.push(text.slice(from, end < 0 ? pos + 1 : Math.min(end + 1, pos + 1)));
-       from = end < 0 ? pos : end + 1;
+       out.push(text.slice(from, pos));
+       from = pos;
      }
      if (from < text.length) out.push(text.slice(from));
      return out.filter(Boolean);
