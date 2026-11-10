@@ -89,9 +89,9 @@ def _pause_at(line):
 def pause_in_poem_lines(text):
     """为诗词类每行按意义单元插入 [PAUSE] 标记，供 speak_segmented 分段合成时使用。
 
-    处理策略：
-    - 纯七言/五言无内部标点句：按二/二/三或二/三标准节奏双断点
-    - 含逗号的分句段：无句末标点的按字数插单个 [PAUSE]，纯七言段升级为双断点
+    处理策略：所有含逗号的分句段，无句末标点的部分统一按字数规则插单个 [PAUSE]。
+    - 七言（7字）：四三节奏，位置4，如"无限风光[PAUSE]尽被占"
+    - 五言（5字）：二三节奏，位置2，如"众鸟高[PAUSE]飞尽"
     - 含句末标点的完整句子：不插 PAUSE（edge-tts SentenceBoundary 已自然断句）
 
     示例：
@@ -100,14 +100,10 @@ def pause_in_poem_lines(text):
         → 第二段"长使英雄泪满襟。"（含句末标点）→ 原样
         → 结果："出师未捷[PAUSE]身先死，长使英雄泪满襟。"
       "不论平地与山尖，无限风光尽被占。"
-        → 第一段"不论平地与山尖" → "不论平地[PAUSE]与山尖"
-        → 第二段"无限风光尽被占" → 七言纯句双断点 → "无限[PAUSE]风光[PAUSE]尽被占"
-        → 结果："不论平地[PAUSE]与山尖，无限[PAUSE]风光[PAUSE]尽被占。"
+        → 两段各7字、均无句末标点 → 统一四三节奏
+        → "不论平地[PAUSE]与山尖，无限风光[PAUSE]尽被占。"
     """
     SENT_END = set("。！？!?")
-    # 纯七言无句末标点的段：按二/二/三节奏双断点
-    def _pause_seven(s):
-        return s[:2] + '[PAUSE]' + s[2:4] + '[PAUSE]' + s[4:]
     lines = text.splitlines()
     out = []
     for line in lines:
@@ -137,11 +133,7 @@ def pause_in_poem_lines(text):
                 if pos is None:
                     processed.append(seg_text + seg_sep)
                     continue
-                # 七言纯段：二/二/三双断点；其他按原有单断点
-                if len(seg_text) == 7 and not any(ch in SENT_END for ch in seg_text):
-                    pauseline = _pause_seven(seg_text)
-                else:
-                    pauseline = seg_text[:pos] + '[PAUSE]' + seg_text[pos:]
+                pauseline = seg_text[:pos] + '[PAUSE]' + seg_text[pos:]
                 processed.append(pauseline + seg_sep)
             # 保持原行缩进
             prefix = line[:len(line) - len(stripped)]
@@ -157,12 +149,8 @@ def pause_in_poem_lines(text):
             if pos is None:
                 out.append(line)
                 continue
-            # 七言纯句：二/二/三双断点；其他按单断点
-            if len(stripped) == 7 and not any(ch in SENT_END for ch in stripped):
-                new_stripped = _pause_seven(stripped)
-            else:
-                new_stripped = stripped[:pos] + '[PAUSE]' + stripped[pos:]
             prefix = line[:len(line) - len(stripped)]
+            new_stripped = stripped[:pos] + '[PAUSE]' + stripped[pos:]
             out.append(prefix + new_stripped)
     return '\n'.join(out)
 
@@ -226,8 +214,7 @@ def is_prose_layout(item):
 def body_text(item):
     if is_prose_layout(item):
         return item.get("content") or item.get("pinyin") or item.get("original") or ""
-    # 优先使用 pinyin_audio（朗读优化版，含结构节奏断点），无则回退到普通 pinyin
-    return item.get("pinyin_audio") or item.get("pinyin") or item.get("original") or item.get("content") or ""
+    return item.get("pinyin") or item.get("original") or item.get("content") or ""
 
 
 def strip_ann(s):
@@ -985,7 +972,7 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
     has_comma_semicolon = any(ch in body_text_for_check for ch in '，；')
     if is_poem and (has_comma_semicolon or any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())):
         # 诗词类按逗号/分号分段合成，段间短停0.15s保持流畅朗诵感
-        audio, cues, total = await speak_segmented(body_text_for_check, voice, rate, pitch)
+        audio, cues, total = await speak_segmented(pause_in_poem_lines(body_text_for_check), voice, rate, pitch)
         # 合并 header cues（从完整文本合成）
         header_parts = [x for x in (tts_clean(item.get("title")),
                                      "，".join(x for x in (dynasty_text(item.get("dynasty")),
