@@ -1025,6 +1025,10 @@
     if (isProseLayout(item)) return item.content || item.pinyin || item.original || '';
     return item.pinyin || item.original || item.content || '';
   }
+  // 朗读用增强文本（含结构断点），显示仍用原始 pinyin
+  function bodyTextAudio(item) {
+    return item.pinyin_audio || bodyText(item);
+  }
   // 句级切分：与 tools/gen_audio.py 的 speak_segmented 保持一致（按句末标点、分号切分）
   const SENT_END = '。！？!?';
   function splitRawSentences(raw) {
@@ -1182,7 +1186,7 @@
   const HL_KEEP = /[\u4e00-\u9fff0-9A-Za-z]/;
   function buildAudioMap(item) {
     if (!audioCues.length || !audioHl.length) return null;
-    const body = bodyText(item);
+    const body = bodyTextAudio(item);
     if (!body) return null;
     const segs = [];
     for (const rawLine of String(body).split('\n')) {
@@ -1543,7 +1547,7 @@
     if (title) queue.push({ text: title, pause: 520, header: true, mood: 'title' });
     const who = [speechDynasty(item.dynasty), speechClean(item.author)].filter(Boolean).join('，');
     if (who) queue.push({ text: who, pause: 780, header: true, mood: 'title' });
-    queue.push(...splitSpeech(plain(bodyText(item))));
+    queue.push(...splitSpeech(plain(bodyTextAudio(item))));
     if (!queue.length) return;
     // 重点句读出感情：放慢半拍，并在前一句后多留气口
     const norm = s => String(s || '').replace(/[^\u4e00-\u9fa5]/g, '');
