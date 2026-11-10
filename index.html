@@ -947,15 +947,16 @@
       const whole = lineWidth(el);
       if (whole <= avail) { oneLine.push(el); continue; }
       const need = limit / whole;
-      if (need >= PREFER) {                       // 缩一点就能排成一行
-        v = Math.min(v, need);
-        oneLine.push(el);
-       } else if (segs.length > 1) {               // 放不下：靠逗逗或诗意节奏断成多段
+       if (need >= PREFER) {                       // 缩一点就能排成一行
+         v = Math.min(v, need);
+         oneLine.push(el);
+       } else if (segs.length > 1) {               // 放不下：靠逗号或诗意节奏断成多段
          const segMax = Math.max(...segs.map(segWidth));
          v = Math.min(v, Math.min(1, limit / segMax));
          if (limit / segMax < MIN) overflow = true;
-    }
-    v = Math.max(MIN, v);
+       }
+     }
+     v = Math.max(MIN, v);
     set(v);
     host.classList.toggle('freewrap', overflow);
 
