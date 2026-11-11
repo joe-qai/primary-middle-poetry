@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>墨韵 · 中小学古诗词全集</title>
-<meta name="description" content="K12 必背古诗词、文言文、散文、故事与课外篇，含拼音、译文、赏析与考点。">
+<title>墨韵 · 中小学诗歌全集</title>
+<meta name="description" content="K12 必背诗歌、文言文、散文、课外篇与国外诗，含拼音、译文、赏析与考点。">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -658,24 +658,25 @@
   <p class="hero-sub">K12 必背 · 人教版 · 统编教材</p>
   <div class="hero-stats">
     <div class="stat"><b id="statPoems">—</b><span>诗词篇目</span></div>
+    <div class="stat"><b id="statHigh">—</b><span>高中诗歌</span></div>
     <div class="stat"><b id="statProse">—</b><span>文言散文</span></div>
-    <div class="stat"><b id="statStory">—</b><span>故事典故</span></div>
     <div class="stat"><b id="statExt">—</b><span>课外篇</span></div>
     <div class="stat"><b id="statCls">—</b><span>名篇馆</span></div>
-    <div class="stat"><b id="statGrp">—</b><span>诗人组合</span></div>
+    <div class="stat"><b id="statFore">—</b><span>国外诗</span></div>
+    <div class="stat"><b id="statFig">—</b><span>名人馆</span></div>
   </div>
 </header>
 
 <nav class="navbar">
   <div class="nav-inner" id="navInner">
-    <button class="nav-btn active" data-panel="home">诗词总览<span class="n" id="navHomeN"></span></button>
-    <button class="nav-btn" data-panel="primary">小学诗词<span class="n" id="navPriN"></span></button>
-    <button class="nav-btn" data-panel="middle">初中诗词<span class="n" id="navMidN"></span></button>
+    <button class="nav-btn active" data-panel="home">诗歌总览<span class="n" id="navHomeN"></span></button>
+    <button class="nav-btn" data-panel="primary">小学诗歌<span class="n" id="navPriN"></span></button>
+    <button class="nav-btn" data-panel="middle">初中诗歌<span class="n" id="navMidN"></span></button>
+    <button class="nav-btn" data-panel="high">高中诗歌<span class="n" id="navHighN"></span></button>
     <button class="nav-btn" data-panel="prose">散文集<span class="n" id="navProN"></span></button>
-    <button class="nav-btn" data-panel="story">故事会<span class="n" id="navStoN"></span></button>
     <button class="nav-btn" data-panel="extra">课外篇<span class="n" id="navExtN"></span></button>
-    <button class="nav-btn" data-panel="classics">名篇馆<span class="n" id="navClsN"></span></button>
-    <button class="nav-btn" data-panel="groups">诗人组合<span class="n" id="navGrpN"></span></button>
+    <button class="nav-btn" data-panel="foreign">国外诗<span class="n" id="navForeN"></span></button>
+    <button class="nav-btn" data-panel="figures">名人馆<span class="n" id="navFigN"></span></button>
     <button class="nav-btn" data-panel="progress">进度</button>
     <div class="nav-spacer"></div>
     <div class="progress-pill" id="navProgress">已学 <b>0</b></div>
@@ -695,11 +696,11 @@
   </section>
   <section class="panel" id="panel-primary"></section>
   <section class="panel" id="panel-middle"></section>
+  <section class="panel" id="panel-high"></section>
   <section class="panel" id="panel-prose"></section>
-  <section class="panel" id="panel-story"></section>
   <section class="panel" id="panel-extra"></section>
-  <section class="panel" id="panel-classics"></section>
-  <section class="panel" id="panel-groups"></section>
+  <section class="panel" id="panel-foreign"></section>
+  <section class="panel" id="panel-figures"></section>
   <section class="panel" id="panel-search"></section>
   <section class="panel" id="panel-progress"></section>
 
@@ -710,7 +711,7 @@
 </main>
 
 <footer>
-  墨韵 · 中小学古诗词全集
+  墨韵 · 中小学诗歌全集
   <span class="sep">|</span>
   供学习参考，内容以统编教材为准
 </footer>
@@ -751,7 +752,7 @@
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 
   // ---- data normalization ----
-  const D = window.POETRY_DATA || { poems: [], prose: [], stories: [], extras: [], classics: [] };
+  const D = window.POETRY_DATA || { poems: [], prose: [], extras: [], classics: [], foreign_poems: [], figures: [] };
 
   // 按年级排序（新补篇目可能追加在数组末尾，这里统一归位）
   const GRADE_ORDER = [
@@ -759,14 +760,15 @@
     '三年级上', '三年级下', '四年级上', '四年级下',
     '五年级上', '五年级下', '六年级上', '六年级下',
     '七年级上', '七年级下', '八年级上', '八年级下',
-    '九年级上', '九年级下'
+    '九年级上', '九年级下',
+    '高一上', '高一下', '高二上', '高二下', '高三上', '高三下'
   ];
   const gradeRank = g => { const i = GRADE_ORDER.indexOf(g); return i < 0 ? 999 : i; };
 
   const allItems = []
     .concat((D.poems || []).map(x => ({ ...x, _kind: 'poem' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
+    .concat((D.foreign_poems || []).map(x => ({ ...x, _kind: 'foreign' })))
     .concat((D.prose || []).map(x => ({ ...x, _kind: 'prose' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
-    .concat((D.stories || []).map(x => ({ ...x, _kind: 'story' })))
     .concat((D.extras || []).map(x => ({ ...x, _kind: 'extra' })))
     .concat((D.classics || []).map(x => ({ ...x, _kind: 'classics' })));
 
@@ -850,16 +852,19 @@
 
   // ---- icon helpers ----
   const KIND_META = {
-    poem: { label: '诗词', cls: '' },
-    prose: { label: '散文', cls: 'j' },
-    story: { label: '故事', cls: 'j' },
-    extra: { label: '课外', cls: 'v' },
-    classics: { label: '名篇', cls: 'k' },
+    poem:   { label: '诗歌', cls: '' },
+    foreign:{ label: '国外诗', cls: 'v' },
+    prose:  { label: '散文', cls: 'j' },
+    extra:  { label: '课外', cls: 'v' },
+    classics:{ label: '名篇', cls: 'k' },
+    figures:{ label: '名人', cls: 'k' },
   };
 
   // ---- count helpers ----
   const primaryPoems = allItems.filter(x => x._kind === 'poem' && x.level === 'primary');
-  const middlePoems = allItems.filter(x => x._kind === 'poem' && x.level === 'middle');
+  const middlePoems  = allItems.filter(x => x._kind === 'poem'  && x.level === 'middle');
+  const highSchoolPoems = allItems.filter(x => x._kind === 'poem' && x.level === 'highschool');
+  const foreignPoems   = allItems.filter(x => x._kind === 'foreign');
 
   // ============================================================
   //  RENDER: CARD
@@ -980,7 +985,7 @@
       if (prose) {
         const html = String(body).split('\n').map(l =>
           `<p>${splitRawSentences(l).map(s => `<span class="sent">${contentLineHTML(item, s)}</span>`).join('')}</p>`).join('');
-        parts.push(`<div class="block"><div class="label">${item._kind === 'story' ? '故事' : '正文'}</div><div class="reader-body">${html}</div></div>`);
+        parts.push(`<div class="block"><div class="label">正文</div><div class="reader-body">${html}</div></div>`);
       } else {
         const rawLines = String(body).split('\n');
         const linesHTML = rawLines.map(rawLine => {
@@ -996,7 +1001,7 @@
       parts.push(`<div class="block"><div class="label">译文</div><p>${plainLines(item.translation).join('</p><p>')}</p></div>`);
     }
     // 3) 寓意（故事）
-    if (item.meaning && item._kind === 'story') {
+    if (item.meaning) {
       parts.push(`<div class="block j"><div class="label">寓意</div><p>${plainLines(item.meaning).join('</p><p>')}</p></div>`);
     }
     // 4) 赏析
@@ -1017,7 +1022,7 @@
   }
   // 课外篇中「辞赋/散文」类，正文比注音片段长，按散文全文展示
   function isProseLayout(item) {
-    if (item._kind === 'story' || item._kind === 'prose' || item._kind === 'classics') return true;
+    if (item._kind === 'prose' || item._kind === 'classics') return true;
     if (item._kind === 'extra') return !!item.content && item.content.length > (item.pinyin || '').length;
     return false;
   }
@@ -1650,14 +1655,14 @@
   function currentPanelList() {
     const active = $('.nav-btn.active');
     const panel = active ? active.dataset.panel : 'home';
-    if (panel === 'home') return primaryPoems.concat(middlePoems).filter(matchesFilter);
+    if (panel === 'home') return primaryPoems.concat(middlePoems, highSchoolPoems, foreignPoems).filter(matchesFilter);
     if (panel === 'primary') return primaryPoems.filter(matchesFilter);
-    if (panel === 'middle') return middlePoems.filter(matchesFilter);
-    if (panel === 'prose') return (D.prose || []).map(x => ({ ...x, _kind: 'prose' }));
-    if (panel === 'story') return (D.stories || []).map(x => ({ ...x, _kind: 'story' }));
-    if (panel === 'extra') return (D.extras || []).map(x => ({ ...x, _kind: 'extra' }));
-    if (panel === 'classics') return (D.classics || []).map(x => ({ ...x, _kind: 'classics' }));
-    if (panel === 'groups') return [];
+    if (panel === 'middle')  return middlePoems.filter(matchesFilter);
+    if (panel === 'high')    return highSchoolPoems.filter(matchesFilter);
+    if (panel === 'prose')   return (D.prose || []).map(x => ({ ...x, _kind: 'prose' }));
+    if (panel === 'extra')   return (D.extras || []).map(x => ({ ...x, _kind: 'extra' }));
+    if (panel === 'foreign') return foreignPoems.filter(matchesFilter);
+    if (panel === 'figures') return [];
     return allItems;
   }
 
@@ -1682,11 +1687,12 @@
   }
 
   const SEARCH_GROUPS = [
-    { kind: 'poem', glyph: '诗', cls: '', label: '诗词', sub: '教材必背 · 小学 / 初中' },
+    { kind: 'poem', glyph: '诗', cls: '', label: '诗歌', sub: '教材必背 · 小学 / 初中 / 高中' },
+    { kind: 'foreign', glyph: '外', cls: 'v', label: '国外诗', sub: '世界名诗选' },
     { kind: 'prose', glyph: '文', cls: 'j', label: '散文', sub: '文言散文' },
-    { kind: 'story', glyph: '事', cls: 'j', label: '故事', sub: '典故故事' },
-    { kind: 'extra', glyph: '外', cls: 'v', label: '课外', sub: '课外拓展' },
-    { kind: 'classics', glyph: '名', cls: 'k', label: '名篇', sub: '名篇全文' },
+    { kind: 'extra', glyph: '拓', cls: 'v', label: '课外', sub: '课外拓展' },
+    { kind: 'classics', glyph: '典', cls: 'k', label: '名篇', sub: '名篇全文' },
+    { kind: 'figures', glyph: '人', cls: 'k', label: '名人', sub: '作家馆' },
   ];
   // 标题命中优先，其次作者，其余按原顺序
   function searchRank(item) {
@@ -1719,6 +1725,8 @@
     const host = $('#homeBody');
     const pri = primaryPoems.filter(matchesFilter);
     const mid = middlePoems.filter(matchesFilter);
+    const his = highSchoolPoems.filter(matchesFilter);
+    const for_ = foreignPoems.filter(matchesFilter);
     let html = '';
     if (pri.length) {
       html += secHead('小', '', '小学篇目', '一至六年级 · 部编版必背', pri.length);
@@ -1728,7 +1736,15 @@
       html += secHead('初', 'v', '初中篇目', '七至九年级 · 中考必考', mid.length);
       html += gridHTML(mid);
     }
-    if (!pri.length && !mid.length) html = '';
+    if (his.length) {
+      html += secHead('高', 'j', '高中篇目', '高一至高三 · 高考必读', his.length);
+      html += gridHTML(his);
+    }
+    if (for_.length) {
+      html += secHead('世', '', '国外诗歌', '中外名家 · 世界名诗选读', for_.length);
+      html += gridHTML(for_);
+    }
+    if (!pri.length && !mid.length && !his.length && !for_.length) html = '';
     host.innerHTML = html;
     updateEmpty();
   }
@@ -1754,39 +1770,39 @@
     if (!list.length) { host.innerHTML = ''; return; }
     host.innerHTML = secHead('文', 'j', '散文集', '文言名篇 · 经典散文', list.length) + gridHTML(list);
   }
-  function renderStory() {
-    const list = (D.stories || []).map(x => ({ ...x, _kind: 'story' })).filter(matchesFilter);
-    const host = $('#panel-story');
-    if (!list.length) { host.innerHTML = ''; return; }
-    host.innerHTML = secHead('事', 'j', '故事会', '典故故事 · 名人轶事', list.length) + gridHTML(list);
-  }
   function renderExtra() {
     const list = (D.extras || []).map(x => ({ ...x, _kind: 'extra' })).filter(matchesFilter);
     const host = $('#panel-extra');
     if (!list.length) { host.innerHTML = ''; return; }
     host.innerHTML = secHead('拓', 'v', '课外篇', '名句名篇 · 拓展阅读', list.length) + gridHTML(list);
   }
-
-    function renderClassics() {
+  function renderClassics() {
     const list = (D.classics || []).map(x => ({ ...x, _kind: 'classics' })).filter(matchesFilter);
     const host = $('#panel-classics');
     if (!list.length) { host.innerHTML = ''; return; }
     host.innerHTML = secHead('典', 'k', '名篇馆', '课标名篇 · 全文精读', list.length) + gridHTML(list);
   }
+  function renderForeign() {
+    const list = foreignPoems.filter(matchesFilter);
+    const host = $('#panel-foreign');
+    if (!list.length) { host.innerHTML = ''; return; }
+    host.innerHTML = secHead('世', 'v', '国外诗歌', '中外名家 · 世界名诗选读', list.length) + gridHTML(list);
+  }
+  function renderFigures() {
+    renderGroupCards(); // reuse existing group card rendering as figures panel
+  }
 
-    // ============================================================
-  //  诗人组合
   // ============================================================
-  const GROUPS_DATA = [
-    { id:"g001", name:"三曹", dynasty:"汉魏",
-      desc:"曹操、曹丕、曹植，父子三人均以诗名著称，开创建安风骨。",
+  //  名人馆（由原诗人组合迁移，合并人物简介与作品）
+  // ============================================================
+  const FIGURES_DATA = [
+    { id:"f001", name:"三曹", dynasty:"汉魏", bio:"曹操、曹丕、曹植，父子三人均以诗名著称，开创建安风骨。曹操气魄宏伟，悲凉慷慨；曹丕清丽婉约，长于七言；曹植辞采华茂，情兼雅怨。",
       members:[
         {name:"曹操",items:["p091", "m013", "x011"]},
         {name:"曹丕",items:["p191", "p192"]},
         {name:"曹植",items:["m015", "c002"]}
       ]},
-    { id:"g002", name:"建安七子", dynasty:"汉末",
-      desc:"孔融、陈琳、王粲、徐干、阮瑀、应玚、刘桢，建安文学骨干群体。本馆收录其存世作品。",
+    { id:"f002", name:"建安七子", dynasty:"汉末", bio:"孔融、陈琳、王粲、徐干、阮瑀、应玚、刘桢，建安文学骨干群体。本馆收录其存世作品。",
       members:[
         {name:"孔融",items:[]},
         {name:"陈琳",items:[]},
@@ -1796,8 +1812,7 @@
         {name:"应玚",items:[]},
         {name:"刘桢",items:["m014"]}
       ]},
-    { id:"g003", name:"竹林七贤", dynasty:"魏晋",
-      desc:"嵇康、阮籍、山涛、向秀、刘伶、王戎、阮咸，崇尚自然、不拘礼法的名士群体。阮咸无诗作传世，列入以全群像。",
+    { id:"f003", name:"竹林七贤", dynasty:"魏晋", bio:"嵇康、阮籍、山涛、向秀、刘伶、王戎、阮咸，崇尚自然、不拘礼法的名士群体。阮咸无诗作传世，列入以全群像。",
       members:[
         {name:"嵇康",items:["x025"]},
         {name:"阮籍",items:["x026"]},
@@ -1807,16 +1822,14 @@
         {name:"王戎",items:[]},
         {name:"阮咸",items:[]}
       ]},
-    { id:"g004", name:"初唐四杰", dynasty:"初唐",
-      desc:"王勃、杨炯、卢照邻、骆宾王，初唐诗坛先驱，一扫六朝浮靡之风。",
+    { id:"f004", name:"初唐四杰", dynasty:"初唐", bio:"王勃、杨炯、卢照邻、骆宾王，初唐诗坛先驱，一扫六朝浮靡之风。王勃骈文绝妙，杨炯边塞诗雄健，卢照邻长篇歌行跌宕，骆宾王《讨武曌檄》名动天下。",
       members:[
         {name:"王勃",items:["m027", "c003"]},
         {name:"杨炯",items:["p194"]},
         {name:"卢照邻",items:["p195"]},
         {name:"骆宾王",items:["p001"]}
       ]},
-    { id:"g005", name:"唐宋八大家", dynasty:"唐·宋",
-      desc:"韩愈、柳宗元、欧阳修、苏洵、苏轼、苏辙、王安石、曾巩，古文运动核心人物。",
+    { id:"f005", name:"唐宋八大家", dynasty:"唐·宋", bio:"韩愈、柳宗元、欧阳修、苏洵、苏轼、苏辙、王安石、曾巩，古文运动核心人物。他们倡导散体古文，反对骈俪文风，对后世散文发展影响深远。",
       members:[
         {name:"韩愈",items:["p084", "p108", "p130", "w008", "x016"]},
         {name:"柳宗元",items:["p017", "w007"]},
@@ -1827,38 +1840,34 @@
         {name:"王安石",items:["p013", "p033", "p086", "p088", "p099", "c022"]},
         {name:"曾巩",items:["w034"]}
       ]},
-    { id:"g006", name:"三苏", dynasty:"宋",
-      desc:"苏洵、苏轼、苏辙父子三人，同为唐宋八大家成员，文章气魄宏大，为宋代散文高峰。",
+    { id:"f006", name:"三苏", dynasty:"宋", bio:"苏洵、苏轼、苏辙父子三人，同为唐宋八大家成员，文章气魄宏大，为宋代散文高峰。苏轼更是诗词文书画全才，豪放词派开创者。",
       members:[
         {name:"苏洵",items:["c005"]},
         {name:"苏轼",items:["p026", "p028", "p034", "p045", "p079", "q013", "p115", "p125", "p126", "m029", "w005", "x004", "x013", "c020", "c021"]},
         {name:"苏辙",items:["w033"]}
       ]},
-    { id:"g007", name:"大李杜", dynasty:"唐",
-      desc:"李白、杜甫，盛唐诗歌双峰，一浪漫一写实，并称「李杜」。",
+    { id:"f007", name:"大李杜", dynasty:"唐", bio:"李白、杜甫，盛唐诗歌双峰，一浪漫一写实，并称「李杜」。李白诗飘逸豪放，被誉为「诗仙」；杜甫诗沉郁顿挫，被尊为「诗圣」。",
       members:[
         {name:"李白",items:["p005", "p008", "p009", "p016", "p018", "p027", "p030", "p043", "p051", "p092", "p106", "p111", "p120", "m001", "m010", "x007", "x008"]},
         {name:"杜甫",items:["p024", "p038", "p057", "p073", "p083", "p098", "p121", "p128", "m002", "m017", "m028", "x001", "x024"]}
       ]},
-    { id:"g008", name:"小李杜", dynasty:"晚唐",
-      desc:"李商隐、杜牧，晚唐诗坛双璧，诗风各树一帜。",
+    { id:"f008", name:"小李杜", dynasty:"晚唐", bio:"李商隐、杜牧，晚唐诗坛双璧，诗风各树一帜。李商隐深情绵邈、隐晦迷离；杜牧俊爽峭拔、风华飘扬。",
       members:[
         {name:"李商隐",items:["q005", "p095", "p103", "p127", "x002"]},
         {name:"杜牧",items:["p025", "p032", "p090", "p102", "p113", "x018"]}
       ]},
-    { id:"g009", name:"苏辛", dynasty:"宋",
-      desc:"苏轼、辛弃疾，宋词豪放派两大代表，词风雄浑壮阔。",
+    { id:"f009", name:"苏辛", dynasty:"宋", bio:"苏轼、辛弃疾，宋词豪放派两大代表，词风雄浑壮阔。苏轼开创豪放词派，以诗为词；辛弃疾继承发扬，以文为词，充满爱国激情。",
       members:[
         {name:"苏轼",items:["p026", "p028", "p034", "p045", "p079", "q013", "p115", "p125", "p126", "m029", "w005", "x004", "x013", "c020", "c021"]},
         {name:"辛弃疾",items:["p041", "q014", "p117", "p124", "p134", "m034", "x021"]}
       ]}
   ];
 
-  function renderGroups() {
-    const host = document.getElementById("panel-groups");
+  function renderGroupCards() {
+    const host = document.getElementById("panel-figures");
     if (!host) return;
-    let html = "<div class=\"sec-head j\"><div class=\"glyph\">群</div><div><h2>诗人组合</h2><p>诗词流派 · 名家群体 · 相互映照</p></div></div>";
-    for (const g of GROUPS_DATA) {
+    let html = "<div class=\"sec-head j\"><div class=\"glyph\">人</div><div><h2>名人馆</h2><p>历代文人 · 诗词流派 · 相互映照</p></div></div>";
+    for (const g of FIGURES_DATA) {
       const totalItems = g.members.reduce((s,m) => s + m.items.length, 0);
       const memberNames = g.members.map(m => esc(m.name)).join("、");
       html += `
@@ -1866,36 +1875,33 @@
           <div class="group-name">${esc(g.name)}</div>
           <div class="group-meta">${esc(g.dynasty)} · ${g.members.length} 人 · ${totalItems} 篇</div>
           <div class="group-members">${memberNames}</div>
-          <div class="group-desc">${esc(g.desc)}</div>
+          <div class="group-desc">${esc(g.bio)}</div>
         </div>`;
     }
     host.innerHTML = html;
     host.querySelectorAll(".group-card").forEach(card => {
-      card.addEventListener("click", () => showGroupDetail(card.dataset.gid));
-      card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showGroupDetail(card.dataset.gid); }});
+      card.addEventListener("click", () => showFigureDetail(card.dataset.gid));
+      card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showFigureDetail(card.dataset.gid); }});
     });
   }
 
-  // 记录从哪个面板进入了诗人组合详情
-  let _groupEntryPanel = 'groups';
+  let _figureEntryPanel = 'figures';
 
-  function goBackFromGroup() {
-    // 直接重新渲染组列表，避免状态混乱
-    renderGroups();
-    switchPanel('groups');
+  function goBackFromFigure() {
+    renderGroupCards();
+    switchPanel('figures');
   }
 
-  function showGroupDetail(gid) {
-    // 记录进入详情前的面板，用于返回
-    _groupEntryPanel = currentPanel || 'groups';
-    const g = GROUPS_DATA.find(x => x.id === gid);
+  function showFigureDetail(fid) {
+    _figureEntryPanel = currentPanel || 'figures';
+    const g = FIGURES_DATA.find(x => x.id === fid);
     if (!g) return;
     const memberItems = [];
     for (const m of g.members) {
       for (const id of m.items) {
         const it = D.poems?.find(x=>x.id===id) || D.prose?.find(x=>x.id===id) ||
-                   D.extras?.find(x=>x.id===id) || D.stories?.find(x=>x.id===id) ||
-                   D.classics?.find(x=>x.id===id);
+                   D.extras?.find(x=>x.id===id) || D.classics?.find(x=>x.id===id) ||
+                   D.foreign_poems?.find(x=>x.id===id);
         if (it) memberItems.push({ ...it, _author: m.name });
       }
     }
@@ -1904,11 +1910,11 @@
       (byAuthor[it._author] = byAuthor[it._author] || []).push(it);
     });
     let html = `
-      <button class="btn-back" id="grpBackBtn">← 返回</button>
+      <button class="btn-back" id="figBackBtn">← 返回</button>
       <div class="sec-head j"><div class="glyph">${esc(g.name[0])}</div>
         <div><h2>${esc(g.name)}</h2><p>${esc(g.dynasty)} · ${g.members.length} 人 · ${memberItems.length} 篇</p></div>
       </div>
-      <div class="group-intro">${esc(g.desc)}</div>
+      <div class="group-intro">${esc(g.bio)}</div>
       <div class="member-sections">`;
     for (const [author, items] of Object.entries(byAuthor)) {
       html += `<div class="member-block"><h3>${esc(author)}</h3>`;
@@ -1928,14 +1934,13 @@
       html += "</div>";
     }
     html += "</div>";
-    const host = $('#panel-groups');
+    const host = $('#panel-figures');
     host.innerHTML = html;
     host.classList.add("on");
-    $$(".panel").forEach(p => { if (p.id !== "panel-groups") p.classList.remove("on"); });
-    switchPanel("groups");
-    // 绑定返回按钮和卡片点击（避免 inline onclick 访问不到 IIFE 内部函数）
-    const backBtn = host.querySelector('#grpBackBtn');
-    if (backBtn) backBtn.addEventListener('click', goBackFromGroup);
+    $$(".panel").forEach(p => { if (p.id !== "panel-figures") p.classList.remove("on"); });
+    switchPanel("figures");
+    const backBtn = host.querySelector('#figBackBtn');
+    if (backBtn) backBtn.addEventListener('click', goBackFromFigure);
     host.querySelectorAll('.member-block .card').forEach(card => {
       card.addEventListener('click', () => openDetail(card.dataset.id));
     });
@@ -1965,7 +1970,7 @@ function renderProgress() {
     };
 
     const rows = [
-      ['poem', '诗词'], ['prose', '散文'], ['story', '故事'], ['extra', '扩展'], ['classics', '名篇']
+      ['poem', '诗歌'], ['foreign', '国外诗'], ['prose', '散文'], ['extra', '课外'], ['classics', '名篇']
     ].map(([k, label]) => {
       const o = byKind[k] || { total: 0, done: 0 };
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.35rem 0;border-bottom:1px dashed var(--line);">
@@ -2013,30 +2018,33 @@ function renderProgress() {
   function refreshCounts() {
     const doneCount = allItems.filter(x => done.has(x.id)).length;
     $('#navProgress').innerHTML = `已学 <b>${doneCount}</b>`;
-    $('#navHomeN').textContent = (D.poems || []).length;
-    $('#navPriN').textContent = primaryPoems.length;
-    $('#navMidN').textContent = middlePoems.length;
-    $('#navProN').textContent = (D.prose || []).length;
-    $('#navStoN').textContent = (D.stories || []).length;
-    $('#navExtN').textContent = (D.extras || []).length;
-    $('#navClsN').textContent = (D.classics || []).length;
+    $('#navHomeN').textContent   = D.poems?.length || 0;
+    $('#navPriN').textContent   = primaryPoems.length;
+    $('#navMidN').textContent   = middlePoems.length;
+    $('#navHighN').textContent  = highSchoolPoems.length;
+    $('#navProN').textContent   = (D.prose || []).length;
+    $('#navExtN').textContent   = (D.extras || []).length;
+    $('#navForeN').textContent  = foreignPoems.length;
+    $('#navFigN').textContent   = FIGURES_DATA.length;
     $('#statPoems').textContent = (D.poems || []).length;
+    $('#statHigh').textContent  = highSchoolPoems.length;
     $('#statProse').textContent = (D.prose || []).length;
-    $('#statStory').textContent = (D.stories || []).length;
-    $('#statExt').textContent = (D.extras || []).length;
-    $('#statCls').textContent = (D.classics || []).length;
-    $('#statGrp').textContent = GROUPS_DATA.length;
+    $('#statExt').textContent   = (D.extras || []).length;
+    $('#statCls').textContent   = (D.classics || []).length;
+    $('#statFore').textContent  = foreignPoems.length;
+    $('#statFig').textContent   = FIGURES_DATA.length;
   }
 
   function renderAll() {
     renderHome();
     renderListPanel('primary', primaryPoems, { glyph: '小', cls: '', title: '小学篇目', sub: '一至六年级 · 部编版必背' });
-    renderListPanel('middle', middlePoems, { glyph: '初', cls: 'v', title: '初中篇目', sub: '七至九年级 · 中考必考' });
+    renderListPanel('middle', middlePoems,  { glyph: '初', cls: 'v', title: '初中篇目', sub: '七至九年级 · 中考必考' });
+    renderListPanel('high',   highSchoolPoems, { glyph: '高', cls: 'j', title: '高中篇目', sub: '高一至高三 · 高考必读' });
     renderProse();
-    renderStory();
     renderExtra();
     renderClassics();
-    renderGroups();
+    renderForeign();
+    renderGroupCards();
     renderSearch();
     renderProgress();
     updateEmpty();
@@ -2047,13 +2055,14 @@ function renderProgress() {
     const active = activeBtn ? activeBtn.dataset.panel : '';
     let count = 0;
     if (query) count = allItems.filter(matchQuery).length;
-    else if (active === 'home') count = primaryPoems.filter(matchesFilter).length + middlePoems.filter(matchesFilter).length;
+    else if (active === 'home') count = primaryPoems.filter(matchesFilter).length + middlePoems.filter(matchesFilter).length + highSchoolPoems.filter(matchesFilter).length + foreignPoems.filter(matchesFilter).length;
     else if (active === 'primary') count = primaryPoems.filter(matchesFilter).length;
     else if (active === 'middle') count = middlePoems.filter(matchesFilter).length;
+    else if (active === 'high') count = highSchoolPoems.filter(matchesFilter).length;
     else if (active === 'prose') count = (D.prose || []).filter(matchesFilter).length;
-    else if (active === 'story') count = (D.stories || []).filter(matchesFilter).length;
     else if (active === 'extra') count = (D.extras || []).filter(matchesFilter).length;
-    else if (active === 'classics') count = (D.classics || []).filter(matchesFilter).length;
+    else if (active === 'foreign') count = foreignPoems.filter(matchesFilter).length;
+    else if (active === 'figures') count = FIGURES_DATA.length;
     else count = 1; // progress always visible
     $('#emptyState').classList.toggle('on', count === 0);
   }
