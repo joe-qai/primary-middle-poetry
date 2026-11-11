@@ -195,10 +195,15 @@ def load_items():
         ("story", "stories"),
         ("extra", "extras"),
         ("classics", "classics"),
+        ("foreign", "foreign_poems"),
+        ("modern", "modern_poems"),
+        ("poem_hs", "highschool_poems"),
     ):
         for x in data.get(field) or []:
             item = dict(x)
             item["_kind"] = kind
+            if kind == "poem_hs":
+                item["level"] = "highschool"
             items.append(item)
     return items
 
@@ -1098,7 +1103,7 @@ async def run(args):
 def main():
     p = argparse.ArgumentParser(description="生成古诗词朗读音频与逐句时间轴")
     p.add_argument("--ids", help="指定篇目 id，逗号分隔")
-    p.add_argument("--kind", help="poem,prose,story,extra,classics")
+    p.add_argument("--kind", help="poem,prose,story,extra,classics,foreign,modern")
     p.add_argument("--level", help="primary,middle（仅诗词有效）")
     p.add_argument("--limit", type=int, help="只取前 N 篇")
     p.add_argument("--all", action="store_true", help="全量生成")
