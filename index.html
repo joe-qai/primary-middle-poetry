@@ -657,13 +657,14 @@
   <h1>中小学古诗词<span class="dot">·</span>全集</h1>
   <p class="hero-sub">K12 必背 · 人教版 · 统编教材</p>
   <div class="hero-stats">
-    <div class="stat"><b id="statPoems">—</b><span>诗词篇目</span></div>
-    <div class="stat"><b id="statHigh">—</b><span>高中诗歌</span></div>
-    <div class="stat"><b id="statProse">—</b><span>文言散文</span></div>
-    <div class="stat"><b id="statExt">—</b><span>课外篇</span></div>
-    <div class="stat"><b id="statCls">—</b><span>名篇馆</span></div>
-    <div class="stat"><b id="statFore">—</b><span>国外诗</span></div>
-    <div class="stat"><b id="statFig">—</b><span>名人馆</span></div>
+    <div class="stat" onclick="switchPanel('home')" style="cursor:pointer"><b id="statPoems">—</b><span>诗词篇目</span></div>
+    <div class="stat" onclick="switchPanel('high')" style="cursor:pointer"><b id="statHigh">—</b><span>高中诗歌</span></div>
+    <div class="stat" onclick="switchPanel('modern')" style="cursor:pointer"><b id="statMod">—</b><span>现代诗歌</span></div>
+    <div class="stat" onclick="switchPanel('prose')" style="cursor:pointer"><b id="statProse">—</b><span>文言散文</span></div>
+    <div class="stat" onclick="switchPanel('extra')" style="cursor:pointer"><b id="statExt">—</b><span>课外篇</span></div>
+    <div class="stat" onclick="switchPanel('classics')" style="cursor:pointer"><b id="statCls">—</b><span>名篇馆</span></div>
+    <div class="stat" onclick="switchPanel('foreign')" style="cursor:pointer"><b id="statFore">—</b><span>国外诗</span></div>
+    <div class="stat" onclick="switchPanel('figures')" style="cursor:pointer"><b id="statFig">—</b><span>名人馆</span></div>
   </div>
 </header>
 
@@ -673,6 +674,7 @@
     <button class="nav-btn" data-panel="primary">小学诗歌<span class="n" id="navPriN"></span></button>
     <button class="nav-btn" data-panel="middle">初中诗歌<span class="n" id="navMidN"></span></button>
     <button class="nav-btn" data-panel="high">高中诗歌<span class="n" id="navHighN"></span></button>
+    <button class="nav-btn" data-panel="modern">现代诗<span class="n" id="navModN"></span></button>
     <button class="nav-btn" data-panel="prose">散文集<span class="n" id="navProN"></span></button>
     <button class="nav-btn" data-panel="extra">课外篇<span class="n" id="navExtN"></span></button>
     <button class="nav-btn" data-panel="foreign">国外诗<span class="n" id="navForeN"></span></button>
@@ -698,6 +700,7 @@
   <section class="panel" id="panel-primary"></section>
   <section class="panel" id="panel-middle"></section>
   <section class="panel" id="panel-high"></section>
+  <section class="panel" id="panel-modern"></section>
   <section class="panel" id="panel-prose"></section>
   <section class="panel" id="panel-extra"></section>
   <section class="panel" id="panel-foreign"></section>
@@ -769,6 +772,7 @@
 
   const allItems = []
     .concat((D.poems || []).map(x => ({ ...x, _kind: 'poem' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
+    .concat((D.highschool_poems || []).map(x => ({ ...x, _kind: 'poem', level: 'highschool' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
     .concat((D.foreign_poems || []).map(x => ({ ...x, _kind: 'foreign' })))
     .concat((D.prose || []).map(x => ({ ...x, _kind: 'prose' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
     .concat((D.extras || []).map(x => ({ ...x, _kind: 'extra' })))
@@ -867,6 +871,7 @@
   const middlePoems  = allItems.filter(x => x._kind === 'poem'  && x.level === 'middle');
   const highSchoolPoems = allItems.filter(x => x._kind === 'poem' && x.level === 'highschool');
   const foreignPoems   = allItems.filter(x => x._kind === 'foreign');
+  const modernPoems    = allItems.filter(x => x.tag === '现代诗' || (x.dynasty === '现代' && x.level !== 'highschool'));
 
   // ============================================================
   //  RENDER: CARD
@@ -1664,6 +1669,7 @@
     if (panel === 'prose')   return (D.prose || []).map(x => ({ ...x, _kind: 'prose' }));
     if (panel === 'extra')   return (D.extras || []).map(x => ({ ...x, _kind: 'extra' }));
     if (panel === 'foreign') return foreignPoems.filter(matchesFilter);
+    if (panel === 'modern')  return modernPoems.filter(matchesFilter);
     if (panel === 'classics') return (D.classics || []).map(x => ({ ...x, _kind: 'classics' }));
     if (panel === 'figures') return [];
     return allItems;
@@ -1692,6 +1698,7 @@
   const SEARCH_GROUPS = [
     { kind: 'poem', glyph: '诗', cls: '', label: '诗歌', sub: '教材必背 · 小学 / 初中 / 高中' },
     { kind: 'foreign', glyph: '外', cls: 'v', label: '国外诗', sub: '世界名诗选' },
+    { kind: 'modern', glyph: '现', cls: '', label: '现代诗', sub: '中国现当代诗歌' },
     { kind: 'prose', glyph: '文', cls: 'j', label: '散文', sub: '文言散文' },
     { kind: 'extra', glyph: '拓', cls: 'v', label: '课外', sub: '课外拓展' },
     { kind: 'classics', glyph: '典', cls: 'k', label: '名篇', sub: '名篇全文' },
@@ -1790,6 +1797,12 @@
     const host = $('#panel-foreign');
     if (!list.length) { host.innerHTML = ''; return; }
     host.innerHTML = secHead('世', 'v', '国外诗歌', '中外名家 · 世界名诗选读', list.length) + gridHTML(list);
+  }
+  function renderModern() {
+    const list = modernPoems.filter(matchesFilter);
+    const host = $('#panel-modern');
+    if (!list.length) { host.innerHTML = ''; return; }
+    host.innerHTML = secHead('现', '', '现代诗歌', '中国现当代 · 自由诗与格律诗', list.length) + gridHTML(list);
   }
   function renderFigures() {
     renderGroupCards(); // reuse existing group card rendering as figures panel
@@ -2021,16 +2034,19 @@ function renderProgress() {
   function refreshCounts() {
     const doneCount = allItems.filter(x => done.has(x.id)).length;
     $('#navProgress').innerHTML = `已学 <b>${doneCount}</b>`;
-    $('#navHomeN').textContent   = D.poems?.length || 0;
+    $('#navHomeN').textContent   = (D.poems || []).length;
     $('#navPriN').textContent   = primaryPoems.length;
     $('#navMidN').textContent   = middlePoems.length;
     $('#navHighN').textContent  = highSchoolPoems.length;
+    $('#navModN').textContent   = modernPoems.length;
     $('#navProN').textContent   = (D.prose || []).length;
     $('#navExtN').textContent   = (D.extras || []).length;
     $('#navForeN').textContent  = foreignPoems.length;
+    $('#navClsN').textContent   = (D.classics || []).length;
     $('#navFigN').textContent   = FIGURES_DATA.length;
     $('#statPoems').textContent = (D.poems || []).length;
     $('#statHigh').textContent  = highSchoolPoems.length;
+    $('#statMod').textContent   = modernPoems.length;
     $('#statProse').textContent = (D.prose || []).length;
     $('#statExt').textContent   = (D.extras || []).length;
     $('#statCls').textContent   = (D.classics || []).length;
@@ -2043,6 +2059,7 @@ function renderProgress() {
     renderListPanel('primary', primaryPoems, { glyph: '小', cls: '', title: '小学篇目', sub: '一至六年级 · 部编版必背' });
     renderListPanel('middle', middlePoems,  { glyph: '初', cls: 'v', title: '初中篇目', sub: '七至九年级 · 中考必考' });
     renderListPanel('high',   highSchoolPoems, { glyph: '高', cls: 'j', title: '高中篇目', sub: '高一至高三 · 高考必读' });
+    renderModern();
     renderProse();
     renderExtra();
     renderClassics();
@@ -2065,6 +2082,7 @@ function renderProgress() {
     else if (active === 'prose') count = (D.prose || []).filter(matchesFilter).length;
     else if (active === 'extra') count = (D.extras || []).filter(matchesFilter).length;
     else if (active === 'foreign') count = foreignPoems.filter(matchesFilter).length;
+    else if (active === 'modern') count = modernPoems.filter(matchesFilter).length;
     else if (active === 'classics') count = (D.classics || []).filter(matchesFilter).length;
     else if (active === 'figures') count = FIGURES_DATA.length;
     else count = 1; // progress always visible
