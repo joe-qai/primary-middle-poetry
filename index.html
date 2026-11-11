@@ -462,6 +462,9 @@
   .poem-lines .seg { display: inline-block; white-space: nowrap; vertical-align: baseline; }
   /* 极窄屏/超长小段的兜底：放开 nowrap，允许自然折行，避免横向溢出 */
   .poem-lines.freewrap .seg { white-space: normal; }
+  /* 现代自由诗：左对齐，行距紧凑，不使用古典诗的居中排版 */
+  .poem-lines.modern { text-align: left; --poem-fs: clamp(1rem, 2.8vw, 1.2rem); }
+  .poem-lines.modern .ln { line-height: 1.9; letter-spacing: 0.02em; padding-left: 0; }
   .ruby { ruby-position: over; }
   ruby rt {
     font-family: var(--sans); font-size: 0.58em;
@@ -1002,7 +1005,7 @@
             .map(s => `<span class="sent">${segWrap(rubyHTML(s))}</span>`).join('');
           return `<div class="ln${isKeyLine(item, rawLine) ? ' key-line' : ''}">${inner || '&nbsp;'}</div>`;
         }).join('');
-        parts.push(`<div class="poem-lines">${linesHTML}</div>`);
+        parts.push(`<div class="poem-lines${item._kind === 'modern' ? ' modern' : ''}">${linesHTML}</div>`);
       }
     }
     // 2) 译文
