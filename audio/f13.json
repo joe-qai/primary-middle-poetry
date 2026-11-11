@@ -1,0 +1,28 @@
+{
+ "id": "f13",
+ "title": "一朵红红的玫瑰",
+ "voice": "zh-CN-YunjianNeural",
+ "rate": "-10%",
+ "pitch": "+0Hz",
+ "dur": 26.424,
+ "hdr": 2,
+ "bodyCues": 1,
+ "v": "70e2d551",
+ "cues": [
+  {
+   "t": 0.1,
+   "d": 2.2,
+   "s": "一朵红红的玫瑰"
+  },
+  {
+   "t": 2.25,
+   "d": 3.097,
+   "s": "英国，罗伯特，彭斯"
+  },
+  {
+   "t": 5.347,
+   "d": 21.003,
+   "s": "OhmyLuveislikeared,redrosethat'snewlysprunginJune;OhmyLuveislikethemelodythat'ssweetlyplayedintune.Sofairartthou,mybonnielass,sodeepinluveamI;AndIwillluvetheestill,mydear,tilla'theseasgangdry.Tilla'theseasgangdry,mydear,andtherocksmeltwi'thesun;AndIwillluvetheestill,mydear,whilethesixteenthousandmoons."
+  }
+ ]
+}
