@@ -676,6 +676,7 @@
     <button class="nav-btn" data-panel="prose">散文集<span class="n" id="navProN"></span></button>
     <button class="nav-btn" data-panel="extra">课外篇<span class="n" id="navExtN"></span></button>
     <button class="nav-btn" data-panel="foreign">国外诗<span class="n" id="navForeN"></span></button>
+    <button class="nav-btn" data-panel="classics">名篇馆<span class="n" id="navClsN"></span></button>
     <button class="nav-btn" data-panel="figures">名人馆<span class="n" id="navFigN"></span></button>
     <button class="nav-btn" data-panel="progress">进度</button>
     <div class="nav-spacer"></div>
@@ -700,6 +701,7 @@
   <section class="panel" id="panel-prose"></section>
   <section class="panel" id="panel-extra"></section>
   <section class="panel" id="panel-foreign"></section>
+  <section class="panel" id="panel-classics"></section>
   <section class="panel" id="panel-figures"></section>
   <section class="panel" id="panel-search"></section>
   <section class="panel" id="panel-progress"></section>
@@ -1662,6 +1664,7 @@
     if (panel === 'prose')   return (D.prose || []).map(x => ({ ...x, _kind: 'prose' }));
     if (panel === 'extra')   return (D.extras || []).map(x => ({ ...x, _kind: 'extra' }));
     if (panel === 'foreign') return foreignPoems.filter(matchesFilter);
+    if (panel === 'classics') return (D.classics || []).map(x => ({ ...x, _kind: 'classics' }));
     if (panel === 'figures') return [];
     return allItems;
   }
@@ -2062,6 +2065,7 @@ function renderProgress() {
     else if (active === 'prose') count = (D.prose || []).filter(matchesFilter).length;
     else if (active === 'extra') count = (D.extras || []).filter(matchesFilter).length;
     else if (active === 'foreign') count = foreignPoems.filter(matchesFilter).length;
+    else if (active === 'classics') count = (D.classics || []).filter(matchesFilter).length;
     else if (active === 'figures') count = FIGURES_DATA.length;
     else count = 1; // progress always visible
     $('#emptyState').classList.toggle('on', count === 0);
