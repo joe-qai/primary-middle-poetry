@@ -757,7 +757,7 @@
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 
   // ---- data normalization ----
-  const D = window.POETRY_DATA || { poems: [], prose: [], extras: [], classics: [], foreign_poems: [], figures: [] };
+  const D = window.POETRY_DATA || { poems: [], prose: [], extras: [], classics: [], foreign_poems: [], modern_poems: [], figures: [] };
 
   // 按年级排序（新补篇目可能追加在数组末尾，这里统一归位）
   const GRADE_ORDER = [
@@ -774,6 +774,7 @@
     .concat((D.poems || []).map(x => ({ ...x, _kind: 'poem' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
     .concat((D.highschool_poems || []).map(x => ({ ...x, _kind: 'poem', level: 'highschool' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
     .concat((D.foreign_poems || []).map(x => ({ ...x, _kind: 'foreign' })))
+    .concat((D.modern_poems || []).map(x => ({ ...x, _kind: 'modern' })))
     .concat((D.prose || []).map(x => ({ ...x, _kind: 'prose' })).sort((a, b) => gradeRank(a.grade) - gradeRank(b.grade)))
     .concat((D.extras || []).map(x => ({ ...x, _kind: 'extra' })))
     .concat((D.classics || []).map(x => ({ ...x, _kind: 'classics' })));
@@ -864,6 +865,7 @@
     extra:  { label: '课外', cls: 'v' },
     classics:{ label: '名篇', cls: 'k' },
     figures:{ label: '名人', cls: 'k' },
+    modern :{ label: '现代诗', cls: '' },
   };
 
   // ---- count helpers ----
@@ -871,7 +873,7 @@
   const middlePoems  = allItems.filter(x => x._kind === 'poem'  && x.level === 'middle');
   const highSchoolPoems = allItems.filter(x => x._kind === 'poem' && x.level === 'highschool');
   const foreignPoems   = allItems.filter(x => x._kind === 'foreign');
-  const modernPoems    = allItems.filter(x => x.tag === '现代诗' || (x.dynasty === '现代' && x.level !== 'highschool'));
+  const modernPoems    = allItems.filter(x => x._kind === 'modern');
 
   // ============================================================
   //  RENDER: CARD
