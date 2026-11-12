@@ -248,7 +248,7 @@ def dynasty_text(d):
 
 # 「而」在连读中容易被语音引擎吞掉：前文连续 6 字以上时补一个逗号，强制读出。
 # 只作用于送入 TTS 的文本，页面展示与时间轴切分不受影响。
-PAUSE_CHARS = set("，。！？；：、,.!?;:\n…—～「」『』“”‘’()（）《》〈〉【】[] \t")
+PAUSE_CHARS = set("，。！？；：、,.!?;:\n…—～「」『』""''()（）《》〈〉【】[] \t")
 
 
 def pause_before_er(s):
@@ -263,6 +263,41 @@ def pause_before_er(s):
             run = 0
         else:
             run += 1
+    return "".join(out)
+
+
+# 中文 TTS 偶发错误合并词边界：已知歧义组合在"前缀字符"后插入逗号，
+# 仅作用于 TTS 输入，不改变数据.js 原文，页面显示不受影响。
+# 格式：(prefix_char, following_chars_set) → 在该位置插入，
+# meaning: 当 prefix 后面紧跟 following_chars 中的任一字符时，在 prefix 后加，
+BOUNDARY_PAUSE = {
+    # 佛/是/于类结构：单字 + 易合并后续
+    "佛": {"是", "于", "乎", "也"},
+    "是": {"因", "被", "为", "将"},
+    # 年/岁/朝/暮等时间词后易与下一词合并
+    "年": {"纪", "代", "月", "日", "少"},
+    "岁": {"月", "星", "华"},
+    "朝": {"夕", "代", "暮", "阳"},
+    "暮": {"朝", "春"},
+    # 动词/介词后容易和宾语首字误组
+    "向": {"晚", "东", "西", "南", "北"},
+    "从": {"今", "古", "此", "来", "前"}
+}
+
+
+def pause_at_boundary(s):
+    """根据 BOUNDARY_PAUSE 字典，在已知的歧义词边界处插入逗号，仅用于 TTS 输入。"""
+    prefixes = set(BOUNDARY_PAUSE.keys())
+    all_following = set()
+    for followed_set in BOUNDARY_PAUSE.values():
+        all_following |= followed_set
+    out = []
+    for i, ch in enumerate(s):
+        out.append(ch)
+        if ch in prefixes:
+            next_ch = s[i+1] if i+1 < len(s) else ""
+            if next_ch in BOUNDARY_PAUSE.get(ch, set()):
+                out.append("，")
     return "".join(out)
 
 
@@ -402,7 +437,7 @@ def compose(item, join_header=False):
     """拼出朗读文本，返回 (text, 头部行数, 正文句数)。"""
     title = tts_clean(item.get("title"))
     who = "，".join(x for x in (dynasty_text(item.get("dynasty")), tts_clean(item.get("author"))) if x)
-    body = pause_before_er(tts_clean(body_text(item)))
+    body = pause_at_boundary(pause_before_er(tts_clean(body_text(item))))
     header = [x for x in (title, who) if x]
     if join_header and len(header) > 1:
         # 单字标题单独起句容易硬起/破音，连成一句读更顺
@@ -834,7 +869,7 @@ async def synth_expr(item, voice, rate, out_mp3, spec):
     title = tts_clean(item.get("title"))
     who = "，".join(x for x in (dynasty_text(item.get("dynasty")), tts_clean(item.get("author"))) if x)
     header = [x for x in (title, who) if x]
-    body = pause_before_er(tts_clean(body_text(item)))
+    body = pause_at_boundary(pause_before_er(tts_clean(body_text(item))))
     opening = spec["match"]
     if not body.startswith(opening):
         return await synth_plain(item, voice, rate, out_mp3)
@@ -973,7 +1008,7 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
         raise ValueError("empty text")
     # 对诗词类（含逗号/分号，或5/7字古体句）使用分段合成，确保每小句有准确时间戳
     is_poem = item["_kind"] not in PROSE_KINDS
-    body_text_for_check = pause_before_er(tts_clean(body_text(item)))
+    body_text_for_check = pause_at_boundary(pause_before_er(tts_clean(body_text(item))))
     has_comma_semicolon = any(ch in body_text_for_check for ch in '，；')
     if is_poem and (has_comma_semicolon or any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())):
         # 诗词类按逗号/分号分段合成，段间短停0.15s保持流畅朗诵感
