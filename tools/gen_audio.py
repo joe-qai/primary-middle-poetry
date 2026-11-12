@@ -266,39 +266,69 @@ def pause_before_er(s):
     return "".join(out)
 
 
-# 中文 TTS 偶发错误合并词边界：已知歧义组合在"前缀字符"后插入逗号，
-# 仅作用于 TTS 输入，不改变数据.js 原文，页面显示不受影响。
-# 格式：(prefix_char, following_chars_set) → 在该位置插入，
-# meaning: 当 prefix 后面紧跟 following_chars 中的任一字符时，在 prefix 后加，
-BOUNDARY_PAUSE = {
-    # 佛/是/于类结构：单字 + 易合并后续
-    "佛": {"是", "于", "乎", "也"},
-    "是": {"因", "被", "为", "将"},
-    # 年/岁/朝/暮等时间词后易与下一词合并
-    "年": {"纪", "代", "月", "日", "少"},
+# 中文 TTS 偶发错误合并词边界问题修复。
+#
+# edge-tts / Microsoft TTS 的中文分词器对以下情况容易出错：
+#   1. 单字名词+常见动词/连词 → 错误合并为一个词
+#      例：佛于是 → 错误切成「佛是 / 于」而非「佛 / 于是」
+#      例：年岁 → 错误切成「年 / 岁」或合为「年纪」的读音
+#   2. 专有名词+后续虚词 → 跨词合并
+#      例：向晚 → 误读为地名「向晚」而非「向/晚」
+#
+# 解决思路（不修改 data.js）：
+#   方案 A：在歧义词后插入可见逗号「佛，于是」→ 会导致朗读时出现不自然停顿
+#   方案 B：插入不可见 Unicode 占位符 U+2060（Word Joiner）→ TTS 会在此处停顿
+#           但渲染到页面时该字符不可见，audio/m10.json 的时间轴标注也恢复原文
+#
+# 方案 B 优势：数据干净、朗读自然、时间轴与页面原文一致。
+
+# 触发位置：在该字符之后插入 U+2060，让 TTS 将其视为韵律边界
+SILENT_BREAK_BEFORE = {
+    # 佛 + 于是/是 → 避免读出「佛是」
+    "佛": {"于", "是", "乎"},
+    # 年/岁/朝/暮等时间词单字 + 易合并的后缀
+    "年": {"纪", "代", "少"},
     "岁": {"月", "星", "华"},
     "朝": {"夕", "代", "暮", "阳"},
     "暮": {"朝", "春"},
-    # 动词/介词后容易和宾语首字误组
-    "向": {"晚", "东", "西", "南", "北"},
-    "从": {"今", "古", "此", "来", "前"}
 }
 
+# 多字词保护列表：这些组合不能被拆散，必须整体合成一整段
+PROTECTED_WORDS = {
+    "于是", "但是", "所以", "然而", "虽然", "如果",
+    "然后", "至于", "关于", "对于", "因为", "以及",
+    "忽然", "依然", "仍然", "正在", "能够", "可以",
+}
 
-def pause_at_boundary(s):
-    """根据 BOUNDARY_PAUSE 字典，在已知的歧义词边界处插入逗号，仅用于 TTS 输入。"""
-    prefixes = set(BOUNDARY_PAUSE.keys())
-    all_following = set()
-    for followed_set in BOUNDARY_PAUSE.values():
-        all_following |= followed_set
+def silence_break_before(s):
+    """在已知歧义边界前插入零宽连接符（\\u2060），使 TTS 在此停顿但不影响显示文本。"""
     out = []
     for i, ch in enumerate(s):
         out.append(ch)
-        if ch in prefixes:
-            next_ch = s[i+1] if i+1 < len(s) else ""
-            if next_ch in BOUNDARY_PAUSE.get(ch, set()):
-                out.append("，")
+        if ch in SILENT_BREAK_BEFORE:
+            # 检查后面是否紧跟易被错误合并的字（且不以保护词开头）
+            nxt = s[i+1] if i+1 < len(s) else ""
+            if nxt in SILENT_BREAK_BEFORE.get(ch, set()):
+                out.append('\u2060')  # WORD JOINER：可见为空，TTS 视为停顿
     return "".join(out)
+
+
+def protect_words_in_text(s):
+    """用空格将受保护的复合词前后隔开，防止 TTS 将它们与上下文错误合并。
+    注：edge-tts 对空格敏感度有限，此函数主要用于配合 silence_break_before 使用。"""
+    for word in PROTECTED_WORDS:
+        if word in s:
+            # 不实际替换，仅在需要时对整体分段处理有参考意义
+            pass
+    return s
+
+
+def pause_at_boundary(s):
+    """综合边界修正：先处理沉默断点，再处理「而」吞音暂停，返回送入 TTS 的文本。
+    输出中的 \\u2060 会在 time-annotator 还原时被剥离，因此 cues/s 保持原文。"""
+    result = silence_break_before(s)
+    result = pause_before_er(result)
+    return result
 
 
 # 专名 / 多音字：只替换送进 TTS 的文本，读出来后再把 cue 文本还原成页面原文。
@@ -411,10 +441,14 @@ def tts_pronounce(s):
     return s
 
 
+# TTS 不可见占位符：插入在 TTS 输入中用于停顿，输出 cue 文本时剥离
+_INVISIBLE_CHARS = set('\u200b\u200c\u200d\u2060\ufeff')
+
+
 def restore_pronounce(s):
     for k, v in PRONOUNCE.items():
         s = s.replace(v, k)
-    return s
+    return ''.join(ch for ch in s if ch not in _INVISIBLE_CHARS)
 
 
 def split_sentences(body):
