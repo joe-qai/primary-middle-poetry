@@ -490,6 +490,13 @@ AUDIO_SR = 24000  # edge-tts 固定输出 24kHz 单声道 48kbps
 # offset+duration 可靠：后者会略微高估，累积后会把最后一句 cue 推到音频末尾之后，
 # 表现为「最后一句没高亮」。
 MP3_BYTES_PER_SEC = 6000.0
+GAP_SEC = 0.30  # 歧义词边界处的静音间隙（秒）
+
+# 歧义词边界列表：遇到这些模式时，在 TTS 合成后手动拆分并插入静音
+# 格式：(前缀词, 后缀词) → 在该位置断开，生成两段独立音频，中间补 GAP_SEC 秒静音
+DISAMBIG_PATTERNS = [
+    ("佛", "于是"),   # 佛于是 → 佛 / 于是（避免读成「佛是」）
+]
 
 
 def mp3_dur(data: bytes) -> float:
@@ -845,18 +852,61 @@ async def speak_segmented(text, voice, rate, pitch="+0Hz", volume="+0%", retries
             all_audio = bytearray()
             all_cues = []
             offset = 0.0
-
             for seg_text in segments:
                 seg_clean = tts_pronounce(seg_text)
-                seg_audio, seg_cues = await speak(seg_clean, voice, rate, pitch, volume, retries)
-                # 用真实字节长度换算本段时长（不再用 boundary 估算，避免累积漂移）
-                seg_dur = mp3_dur(seg_audio)
-                for c in clamp_cues(seg_cues, seg_dur):
-                    all_cues.append({"t": round(offset + c["t"], 3),
-                                     "d": c["d"],
-                                     "s": restore_pronounce(c["s"])})
-                all_audio.extend(seg_audio)
-                offset += seg_dur
+                
+                # 检查是否需要拆分歧义词
+                split_info = None
+                for prefix, suffix in DISAMBIG_PATTERNS:
+                    idx = seg_clean.find(prefix + suffix)
+                    if idx >= 0:
+                        # 找到歧义边界，拆分成两段
+                        part_a = seg_clean[:idx + len(prefix)]
+                        part_b = seg_clean[idx + len(prefix):]
+                        split_info = (part_a, part_b)
+                        break
+                
+                if split_info:
+                    part_a, part_b = split_info
+                    # 分别合成两段
+                    a_audio, a_cues = await speak(part_a, voice, rate, pitch, volume, retries)
+                    b_audio, b_cues = await speak(part_b, voice, rate, pitch, volume, retries)
+                    
+                    # 构造静音字节
+                    sil_bytes = int(GAP_SEC * MP3_BYTES_PER_SEC)
+                    silence = bytes(sil_bytes)
+                    
+                    # 合并音频
+                    seg_audio = bytearray(a_audio) + silence + bytearray(b_audio)
+                    seg_dur_a = mp3_dur(a_audio)
+                    seg_dur_b = mp3_dur(b_audio)
+                    seg_dur = seg_dur_a + GAP_SEC + seg_dur_b
+                    
+                    # 合并 cues：第一段正常，第二段偏移
+                    for c in clamp_cues(a_cues, seg_dur_a):
+                        all_cues.append({"t": round(offset + c["t"], 3),
+                                         "d": c["d"],
+                                         "s": restore_pronounce(c["s"])})
+                    # 添加一个标记 cue 表示静音间隙（可选）
+                    all_cues.append({"t": round(offset + seg_dur_a, 3),
+                                     "d": GAP_SEC,
+                                     "s": ""})  # 空文本，仅占位
+                    for c in clamp_cues(b_cues, seg_dur_b):
+                        all_cues.append({"t": round(offset + seg_dur_a + GAP_SEC + c["t"], 3),
+                                         "d": c["d"],
+                                         "s": restore_pronounce(c["s"])})
+                    all_audio.extend(seg_audio)
+                    offset += seg_dur
+                else:
+                    # 正常合成整段
+                    seg_audio, seg_cues = await speak(seg_clean, voice, rate, pitch, volume, retries)
+                    seg_dur = mp3_dur(seg_audio)
+                    for c in clamp_cues(seg_cues, seg_dur):
+                        all_cues.append({"t": round(offset + c["t"], 3),
+                                         "d": c["d"],
+                                         "s": restore_pronounce(c["s"])})
+                    all_audio.extend(seg_audio)
+                    offset += seg_dur
 
             total = offset
             return bytes(all_audio), all_cues, total
@@ -1042,7 +1092,13 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
         raise ValueError("empty text")
     # 对诗词类（含逗号/分号，或5/7字古体句）使用分段合成，确保每小句有准确时间戳
     is_poem = item["_kind"] not in PROSE_KINDS
-    body_text_for_check = pause_at_boundary(pause_before_er(tts_clean(body_text(item))))
+    body_raw = tts_clean(body_text(item))
+    # pause_before_er 只为古典诗词服务（处理「而」吞音问题）；现代自由诗不应用，
+    # 否则会在"而你..."等处插入逗号，导致被误判为古典诗词走 speak_segmented 路径
+    if item.get("_kind") == "modern":
+        body_text_for_check = silence_break_before(body_raw)
+    else:
+        body_text_for_check = pause_at_boundary(pause_before_er(body_raw))
     has_comma_semicolon = any(ch in body_text_for_check for ch in '，；')
     if is_poem and (has_comma_semicolon or any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())):
         # 诗词类按逗号/分号分段合成，段间短停0.15s保持流畅朗诵感
@@ -1076,14 +1132,67 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
             "cues": cues,
         }
     else:
-        audio, cues = await speak(text, voice, rate, pitch)
-        out_mp3.write_bytes(audio)
-        if join and hdr > 1 and cues:
-            cues = split_header_cue(audio, cues[0]) + cues[1:]
-        dur = round(mp3_dur(audio), 3)
-        cues = clamp_cues(cues, dur)
-        hdr = min(hdr, len(cues))
-        body_count = max(0, len(cues) - hdr)
+        # 自由诗/散文类：检测歧义词并拆分合成
+        text_clean = pause_at_boundary(pause_before_er(tts_clean(body_text(item))))
+        # 检查是否需要拆分（处理可能已插入的零宽字符）
+        split_point = None
+        for prefix, suffix in DISAMBIG_PATTERNS:
+            # 搜索原始模式或带零宽字符的模式
+            pat_raw = prefix + suffix
+            pat_zwj = prefix + '\u2060' + suffix
+            idx = text_clean.find(pat_raw)
+            if idx < 0:
+                idx = text_clean.find(pat_zwj)
+            if idx >= 0:
+                # 找到位置，计算分割点（跳过可能的 ZWJ）
+                split_pos = idx + len(prefix)
+                # 确认分割点后确实是 suffix（跳过 ZWJ）
+                after_split = text_clean[split_pos:].lstrip('\u2060')
+                if after_split.startswith(suffix):
+                    split_point = (split_pos, prefix, suffix)
+                    break
+        
+        # 合成 header（标题 + 作者）
+        header_parts = [x for x in (tts_clean(item.get("title")),
+                                     "，".join(x for x in (dynasty_text(item.get("dynasty")),
+                                                           tts_clean(item.get("author"))) if x)) if x]
+        header_text = "\n".join(header_parts)
+        h_audio, h_cues = await speak(header_text, voice, rate)
+        
+        if split_point:
+            pos, pre, suf = split_point
+            # 移除 part_b 开头的零宽字符（如果有）
+            part_a = text_clean[:pos]
+            part_b = text_clean[pos:].lstrip('\u2060')
+            a_audio, a_cues = await speak(part_a, voice, rate, pitch)
+            b_audio, b_cues = await speak(part_b, voice, rate, pitch)
+            sil_bytes = int(GAP_SEC * MP3_BYTES_PER_SEC)
+            silence = bytes(sil_bytes)
+            body_audio = bytearray(a_audio) + silence + bytearray(b_audio)
+            dur_a = mp3_dur(a_audio)
+            dur_b = mp3_dur(b_audio)
+            body_dur = round(dur_a + GAP_SEC + dur_b, 3)
+            # 合并 body cues
+            all_body_cues = list(clamp_cues(a_cues, dur_a))
+            all_body_cues.append({"t": round(dur_a, 3), "d": GAP_SEC, "s": ""})
+            for c in clamp_cues(b_cues, dur_b):
+                all_body_cues.append({"t": round(dur_a + GAP_SEC + c["t"], 3),
+                                     "d": c["d"],
+                                     "s": restore_pronounce(c["s"])})
+            body_cues = clamp_cues(all_body_cues, body_dur)
+        else:
+            body_audio, body_cues = await speak(text_clean, voice, rate, pitch)
+            body_dur = mp3_dur(body_audio)
+        
+        full_audio = bytearray(h_audio) + bytearray(body_audio)
+        out_mp3.write_bytes(full_audio)
+        dur = round(mp3_dur(full_audio), 3)
+        offset = round(mp3_dur(h_audio), 3)
+        h_final = clamp_cues(h_cues, dur)
+        b_final = clamp_cues([dict(c, t=round(c["t"] + offset, 3)) for c in body_cues], dur)
+        cues = h_final + b_final
+        hdr = len(h_final)
+        body_count = len(b_final)
         return {
             "id": item["id"],
             "title": item.get("title", ""),
@@ -1093,7 +1202,7 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
             "dur": dur,
             "hdr": hdr,
             "bodyCues": body_count,
-            "v": hashlib.md5(audio).hexdigest()[:8],
+            "v": hashlib.md5(bytes(full_audio)).hexdigest()[:8],
             "cues": cues,
         }
 
