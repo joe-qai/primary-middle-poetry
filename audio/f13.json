@@ -4,10 +4,10 @@
  "voice": "zh-CN-YunjianNeural",
  "rate": "-10%",
  "pitch": "+0Hz",
- "dur": 26.424,
+ "dur": 34.032,
  "hdr": 2,
- "bodyCues": 1,
- "v": "70e2d551",
+ "bodyCues": 12,
+ "v": "b9bc1fcd",
  "cues": [
   {
    "t": 0.1,
@@ -21,8 +21,63 @@
   },
   {
    "t": 5.347,
-   "d": 21.003,
-   "s": "OhmyLuveislikeared,redrosethat'snewlysprunginJune;OhmyLuveislikethemelodythat'ssweetlyplayedintune.Sofairartthou,mybonnielass,sodeepinluveamI;AndIwillluvetheestill,mydear,tilla'theseasgangdry.Tilla'theseasgangdry,mydear,andtherocksmeltwi'thesun;AndIwillluvetheestill,mydear,whilethesixteenthousandmoons."
+   "d": 2.486,
+   "s": "OhmyLuveislikeared,redrose"
+  },
+  {
+   "t": 7.833,
+   "d": 2.208,
+   "s": "That'snewlysprunginJune;"
+  },
+  {
+   "t": 10.042,
+   "d": 2.056,
+   "s": "OhmyLuveislikethemelody"
+  },
+  {
+   "t": 12.097,
+   "d": 2.153,
+   "s": "That'ssweetlyplayedintune."
+  },
+  {
+   "t": 14.25,
+   "d": 2.556,
+   "s": "Sofairartthou,mybonnielass,"
+  },
+  {
+   "t": 16.806,
+   "d": 1.903,
+   "s": "SodeepinluveamI;"
+  },
+  {
+   "t": 18.708,
+   "d": 2.5,
+   "s": "AndIwillluvetheestill,mydear,"
+  },
+  {
+   "t": 21.208,
+   "d": 2.056,
+   "s": "Tilla'theseasgangdry."
+  },
+  {
+   "t": 23.264,
+   "d": 2.694,
+   "s": "Tilla'theseasgangdry,mydear,"
+  },
+  {
+   "t": 25.958,
+   "d": 2.375,
+   "s": "Andtherocksmeltwi'thesun;"
+  },
+  {
+   "t": 28.333,
+   "d": 2.5,
+   "s": "AndIwillluvetheestill,mydear,"
+  },
+  {
+   "t": 30.833,
+   "d": 3.125,
+   "s": "Whilethesixteenerthousandmoons."
   }
  ]
 }
