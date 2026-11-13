@@ -1150,24 +1150,28 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
         body_audio, body_cues = await speak(text_clean, voice, rate, pitch)
         body_dur = mp3_dur(body_audio)
 
-        # 如果有歧义词需要微停顿（如"佛于是"），用WordBoundary精确定位后插入20ms静音
-        GAP_MICRO = 0.02
+        # 如果有歧义词需要微停顿（如"佛于是"），用WordBoundary精确定位后插入50ms静音
+        GAP_MICRO = 0.05
         insert_offset = None
+        # 先清除可能的零宽字符，确保能正确搜索
+        text_for_search = text_clean.replace('\u2060', '')
         for prefix, suffix in DISAMBIG_PATTERNS:
-            idx = text_clean.find(prefix + suffix)
+            idx = text_for_search.find(prefix + suffix)
             if idx >= 0:
-                # 用WordBoundary模式重新合成以获取精确词边界
+                # 用WordBoundary模式合成获取精确词边界
                 comm = edge_tts.Communicate(text_clean, voice, rate=rate, pitch=pitch, boundary="WordBoundary")
                 words = []
                 async for chunk in comm.stream():
                     if chunk["type"] == "WordBoundary":
-                        words.append({"t": chunk["offset"] / 1e7, "s": chunk["text"]})
-                # 找到prefix词的最后一个字符位置
+                        words.append({"t": round(chunk["offset"] / 1e7, 3), "d": round(chunk["duration"] / 1e7, 3), "s": chunk["text"]})
+                # 找到prefix词结束的位置（即下一个词开始的时间）
                 cum_t = 0
-                for w in words:
-                    cum_t += w["t"]
-                    if w["s"] and prefix[-1] in w["s"]:
-                        insert_offset = cum_t
+                for i, w in enumerate(words):
+                    cum_t += w["d"]
+                    if prefix in w["s"]:
+                        # 下一个词的起始时间就是插入点
+                        if i + 1 < len(words):
+                            insert_offset = cum_t
                         break
                 if insert_offset is not None:
                     break
