@@ -1399,7 +1399,7 @@
   }
   const MALE_VOICE_RE = /(yunxi|yunjian|yunyang|yunfeng|yunhao|yunjie|yunze|yunye|kangkang|liang|male|男|yun|yunxi|cloud)/i;
   // 严格禁用列表：命中任一关键词即排除（即使同时含male也无济于事）
-  const FEMALE_VOICE_RE = /(xiaoxiao|xiaoyi|xiaomo|xiaoqiu|xiaoxuan|xiaohan|xiaoshuang|xiaoshu|xiaoyou|xiaoya|xiaoni|xiaoling|yunya|female|女|lili|naNa|na-nan)/i;
+  const FEMALE_VOICE_RE = /(xiaoxiao|xiaoyi|xiaomo|xiaoqiu|xiaoxuan|xiaohan|xiaoshuang|xiaoshu|xiaoyou|xiaoya|xiaoni|xiaoling|female|女|lili|naNa|na-nan)/i;
 
   // 优先选中文男声，其次任意中文语音；找不到男声时用较低音高近似
   function pickZhVoice() {
