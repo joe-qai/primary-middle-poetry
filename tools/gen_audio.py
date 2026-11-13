@@ -1149,7 +1149,53 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
         # 合成正文
         body_audio, body_cues = await speak(text_clean, voice, rate, pitch)
         body_dur = mp3_dur(body_audio)
-        
+
+        # 如果有歧义词需要微停顿（如"佛于是"），用WordBoundary精确定位后插入20ms静音
+        GAP_MICRO = 0.02
+        insert_offset = None
+        for prefix, suffix in DISAMBIG_PATTERNS:
+            idx = text_clean.find(prefix + suffix)
+            if idx >= 0:
+                # 用WordBoundary模式重新合成以获取精确词边界
+                comm = edge_tts.Communicate(text_clean, voice, rate=rate, pitch=pitch, boundary="WordBoundary")
+                words = []
+                async for chunk in comm.stream():
+                    if chunk["type"] == "WordBoundary":
+                        words.append({"t": chunk["offset"] / 1e7, "s": chunk["text"]})
+                # 找到prefix词的最后一个字符位置
+                cum_t = 0
+                for w in words:
+                    cum_t += w["t"]
+                    if w["s"] and prefix[-1] in w["s"]:
+                        insert_offset = cum_t
+                        break
+                if insert_offset is not None:
+                    break
+
+        if insert_offset is not None and 0 < insert_offset < body_dur - 0.1:
+            # 在波形中插入20ms静音
+            import numpy as np
+            # 解码mp3为PCM样本
+            try:
+                result = subprocess.run(
+                    [_tool("ffmpeg"), "-y", "-i", "pipe:0", "-f", "s16le", "-ac", "1",
+                     "-ar", str(AUDIO_SR), "pipe:1"],
+                    input=body_audio, capture_output=True, timeout=30
+                )
+                pcm = np.frombuffer(result.stdout, dtype=np.int16).astype(np.float64) / 32768.0
+                insert_sample = int(insert_offset * AUDIO_SR)
+                silence_samples = _sil(GAP_MICRO)
+                pcm = np.concatenate([pcm[:insert_sample], silence_samples, pcm[insert_sample:]])
+                body_audio = _encode(pcm)
+                body_dur = mp3_dur(body_audio)
+                # 更新后续cues时间戳
+                for c in body_cues:
+                    if c["t"] >= insert_offset:
+                        c["t"] = round(c["t"] + GAP_MICRO, 3)
+                        c["d"] = round(c["d"], 3)
+            except Exception:
+                pass  # 如果解码失败，保持原样
+
         full_audio = bytearray(h_audio) + bytearray(body_audio)
         out_mp3.write_bytes(full_audio)
         dur = round(mp3_dur(full_audio), 3)
@@ -1238,6 +1284,7 @@ async def run(args):
 
     index["count"] = len(index["items"])
     index.pop("updated", None)   # 索引里不写年份/时间戳，避免出现具体年份
+    index["version"] = str(int(time.time()))  # 添加版本号破坏浏览器缓存
     INDEX_JSON.write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"\n完成 {done['ok']} 篇，跳过 {done['skip']} 篇，失败 {done['fail']} 篇 / 共 {total} 篇")
     print(f"索引：{INDEX_JSON.relative_to(ROOT)}  共 {index['count']} 篇")
