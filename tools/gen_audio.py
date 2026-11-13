@@ -1145,51 +1145,8 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
                                                            tts_clean(item.get("author"))) if x)) if x]
         header_text = "\n".join(header_parts)
         h_audio, h_cues = await speak(header_text, voice, rate)
-
-        # 如果有歧义词需要微停顿（如"佛于是"），拆成两段合成并在中间插入静音
-        GAP_SEC = 0.08
-        insert_after_char = None
-        _norm = text_clean.replace('\n', '').replace('\u2060', '')
-        for pair in DISAMBIG_PATTERNS:
-            if pair[0] + pair[1] in _norm:
-                insert_after_char = pair[0]
-                break
-
-        if insert_after_char and len(insert_after_char) == 1:
-            # 找最后一个符合条件的边界位置：该字符后（跳过\n和\u2060）紧跟pair[1]
-            last_match = -1
-            pos = 0
-            for pair in DISAMBIG_PATTERNS:
-                if pair[0] + pair[1] not in _norm:
-                    continue
-                while True:
-                    idx = text_clean.find(insert_after_char, pos)
-                    if idx < 0:
-                        break
-                    lookahead = text_clean[idx:]
-                    clean_lookahead = lookahead.replace('\n', '').replace('\u2060', '')
-                    if clean_lookahead.startswith(insert_after_char + pair[1]):
-                        last_match = idx
-                    pos = idx + 1
-                break
-            if last_match >= 0:
-                split_pos = last_match + len(insert_after_char)
-                prefix_text = text_clean[:split_pos]
-                suffix_text = text_clean[split_pos:].replace('\u2060', '')
-                pa_audio, _ = await speak(prefix_text, voice, rate, pitch)
-                sa_audio, scues = await speak(suffix_text, voice, rate, pitch)
-                # edge-tts 返回的是 MP3 字节，需要先解码为 PCM 再拼接，避免帧头开销导致时长计算错误
-                pcm_p = _decode(pa_audio)
-                pcm_s = _decode(sa_audio)
-                offset_a = len(pcm_p) / AUDIO_SR
-                pad = _sil(GAP_SEC)
-                body_pcm = np.concatenate([pcm_p, pad, pcm_s])
-                body_audio = _encode(body_pcm)
-                b_final = [dict(c, t=round(c["t"] + offset_a + GAP_SEC, 3)) for c in scues]
-            else:
-                body_audio, b_final = await speak(text_clean, voice, rate, pitch)
-        else:
-            body_audio, b_final = await speak(text_clean, voice, rate, pitch)
+        # 合成正文
+        body_audio, b_final = await speak(text_clean, voice, rate, pitch)
 
         full_audio = bytearray(h_audio) + bytearray(body_audio)
         out_mp3.write_bytes(full_audio)
