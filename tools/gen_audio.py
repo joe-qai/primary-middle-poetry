@@ -1146,59 +1146,21 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
                                                            tts_clean(item.get("author"))) if x)) if x]
         header_text = "\n".join(header_parts)
         h_audio, h_cues = await speak(header_text, voice, rate)
-        # 合成正文
-        body_audio, body_cues = await speak(text_clean, voice, rate, pitch)
-        body_dur = mp3_dur(body_audio)
-
-        # 如果有歧义词需要微停顿（如"佛于是"），用WordBoundary精确定位后插入50ms静音
-        GAP_MICRO = 0.05
-        insert_offset = None
-        # 先清除可能的零宽字符，确保能正确搜索
-        text_for_search = text_clean.replace('\u2060', '')
+        # 如果有歧义词需要微停顿（如"佛于是"），在文本中插入空格让TTS自然停顿
+        # 空格不会显示，但会让TTS产生自然的呼吸间隙
+        text_for_tts = text_clean
         for prefix, suffix in DISAMBIG_PATTERNS:
-            idx = text_for_search.find(prefix + suffix)
-            if idx >= 0:
-                # 用WordBoundary模式合成获取精确词边界
-                comm = edge_tts.Communicate(text_clean, voice, rate=rate, pitch=pitch, boundary="WordBoundary")
-                words = []
-                async for chunk in comm.stream():
-                    if chunk["type"] == "WordBoundary":
-                        words.append({"t": round(chunk["offset"] / 1e7, 3), "d": round(chunk["duration"] / 1e7, 3), "s": chunk["text"]})
-                # 找到prefix词结束的位置（即下一个词开始的时间）
-                cum_t = 0
-                for i, w in enumerate(words):
-                    cum_t += w["d"]
-                    if prefix in w["s"]:
-                        # 下一个词的起始时间就是插入点
-                        if i + 1 < len(words):
-                            insert_offset = cum_t
-                        break
-                if insert_offset is not None:
-                    break
-
-        if insert_offset is not None and 0 < insert_offset < body_dur - 0.1:
-            # 在波形中插入20ms静音
-            import numpy as np
-            # 解码mp3为PCM样本
-            try:
-                result = subprocess.run(
-                    [_tool("ffmpeg"), "-y", "-i", "pipe:0", "-f", "s16le", "-ac", "1",
-                     "-ar", str(AUDIO_SR), "pipe:1"],
-                    input=body_audio, capture_output=True, timeout=30
-                )
-                pcm = np.frombuffer(result.stdout, dtype=np.int16).astype(np.float64) / 32768.0
-                insert_sample = int(insert_offset * AUDIO_SR)
-                silence_samples = _sil(GAP_MICRO)
-                pcm = np.concatenate([pcm[:insert_sample], silence_samples, pcm[insert_sample:]])
-                body_audio = _encode(pcm)
-                body_dur = mp3_dur(body_audio)
-                # 更新后续cues时间戳
-                for c in body_cues:
-                    if c["t"] >= insert_offset:
-                        c["t"] = round(c["t"] + GAP_MICRO, 3)
-                        c["d"] = round(c["d"], 3)
-            except Exception:
-                pass  # 如果解码失败，保持原样
+            pat = prefix + suffix
+            if pat in text_for_tts:
+                # 在prefix和suffix之间插入空格
+                text_for_tts = text_for_tts.replace(pat, prefix + ' ' + suffix, 1)
+                break
+        # 合成正文
+        body_audio, body_cues = await speak(text_for_tts, voice, rate, pitch)
+        body_dur = mp3_dur(body_audio)
+        # 从cues文本中移除空格（保持显示原文）
+        for c in body_cues:
+            c['s'] = c['s'].replace(' ', '')
 
         full_audio = bytearray(h_audio) + bytearray(body_audio)
         out_mp3.write_bytes(full_audio)
