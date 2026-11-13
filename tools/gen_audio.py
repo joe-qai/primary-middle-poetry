@@ -1100,7 +1100,12 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
     else:
         body_text_for_check = pause_at_boundary(pause_before_er(body_raw))
     has_comma_semicolon = any(ch in body_text_for_check for ch in '，；')
-    if is_poem and (has_comma_semicolon or any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())):
+    # 现代自由诗不检查短行（避免4/5字句被误判为古典诗词）
+    if item.get("_kind") == "modern":
+        has_short_lines = False
+    else:
+        has_short_lines = any(len(line.strip()) in (4, 5, 7, 8) for line in body_text_for_check.splitlines() if line.strip())
+    if is_poem and (has_comma_semicolon or has_short_lines):
         # 诗词类按逗号/分号分段合成，段间短停0.15s保持流畅朗诵感
         audio, cues, total = await speak_segmented(body_text_for_check, voice, rate, pitch)
         # 合并 header cues（从完整文本合成）
