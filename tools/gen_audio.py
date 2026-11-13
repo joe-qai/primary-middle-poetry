@@ -1164,19 +1164,21 @@ async def synth_plain(item, voice, rate, out_mp3, pitch="+0Hz"):
             # 移除 part_b 开头的零宽字符（如果有）
             part_a = text_clean[:pos]
             part_b = text_clean[pos:].lstrip('\u2060')
+            # 歧义词边界只插极短静音（50ms），保持朗读连贯不割裂
+            GAP_MICRO = 0.05
             a_audio, a_cues = await speak(part_a, voice, rate, pitch)
             b_audio, b_cues = await speak(part_b, voice, rate, pitch)
-            sil_bytes = int(GAP_SEC * MP3_BYTES_PER_SEC)
+            sil_bytes = int(GAP_MICRO * MP3_BYTES_PER_SEC)
             silence = bytes(sil_bytes)
             body_audio = bytearray(a_audio) + silence + bytearray(b_audio)
             dur_a = mp3_dur(a_audio)
             dur_b = mp3_dur(b_audio)
-            body_dur = round(dur_a + GAP_SEC + dur_b, 3)
-            # 合并 body cues
+            body_dur = round(dur_a + GAP_MICRO + dur_b, 3)
+            # 合并 body cues：在 split 位置插入一个极短的占位 cue
             all_body_cues = list(clamp_cues(a_cues, dur_a))
-            all_body_cues.append({"t": round(dur_a, 3), "d": GAP_SEC, "s": ""})
+            all_body_cues.append({"t": round(dur_a, 3), "d": GAP_MICRO, "s": ""})
             for c in clamp_cues(b_cues, dur_b):
-                all_body_cues.append({"t": round(dur_a + GAP_SEC + c["t"], 3),
+                all_body_cues.append({"t": round(dur_a + GAP_MICRO + c["t"], 3),
                                      "d": c["d"],
                                      "s": restore_pronounce(c["s"])})
             body_cues = clamp_cues(all_body_cues, body_dur)
